@@ -51,11 +51,18 @@ body.tv .event .x{font-size:.85vw;display:-webkit-box;-webkit-box-orient:vertica
 /* while a notable event is showing, it takes the place of the log remark */
 body.tv #eventCard:not(.hide) ~ #remarkCard{display:none}
 
-/* ---------- announcements: bottom centre, over the Southern Ocean ---------- */
-body.tv #toast{top:auto;bottom:6vh;font-size:1.15vw;max-width:44vw;padding:.7vw 1.3vw;border-radius:.9vw;
-  transform:translate(-50%,calc(100% + 8vh))}
+/* ---------- short announcements (zoom, speed): top centre, just under the chart's title ---------- */
+body.tv #toast{top:9vh;font-size:1.15vw;max-width:44vw;padding:.7vw 1.3vw;border-radius:.9vw;
+  transform:translate(-50%,calc(-100% - 10vh))}
 body.tv #toast.show{transform:translate(-50%,0)}
-body.tv.show-ui #toast{bottom:calc(var(--tl-h) + 4.5vw)}
+
+/* ---------- log captions and narration: bottom centre, over the Southern Ocean ---------- */
+body.tv #caption{bottom:5vh;max-width:52vw;padding:.8vw 1.4vw;border-radius:.9vw;border-left-width:.3vw}
+body.tv.show-ui #caption{bottom:calc(var(--tl-h) + 4.5vw)}
+body.tv #caption .cl{font-size:.75vw}
+body.tv #caption .ch{font-size:1.1vw}
+body.tv #caption .ct{font-size:1.05vw;margin-top:.25vw}
+body.tv #logCard,body.tv #sound{display:none!important}
 
 /* ---------- controls and year strip (slide up on a remote press) ---------- */
 body.tv #timeline{position:fixed;left:0;right:0;bottom:0;z-index:700;padding:.8vw 1.6vw 1vw;background:rgba(16,27,39,.95);

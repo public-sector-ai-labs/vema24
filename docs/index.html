@@ -143,6 +143,18 @@ body.tv #hint{display:block}
 }
 @media (max-width:520px){ .hide-sm{display:none!important} }
 
+/* ---------- Scientific Log: captions, panel section, marks (logbook.js) ---------- */
+#caption{position:absolute;left:50%;bottom:18px;transform:translate(-50%,12px);z-index:600;max-width:min(640px,calc(100% - var(--panel-w) - 60px));
+  background:#101b27ee;border:1px solid var(--line);border-left:3px solid var(--brass);border-radius:10px;padding:9px 14px;
+  opacity:0;transition:opacity .6s,transform .6s;pointer-events:none}
+#caption.show{opacity:1;transform:translate(-50%,0)}
+#caption .cl{color:var(--faint);font-size:11px;text-transform:uppercase;letter-spacing:.1em}
+#caption .ch{font-weight:600;font-size:14px;margin-top:1px}
+#caption .ct{font:14px/1.45 var(--type);color:#efe3c6;margin-top:3px}
+.loghead{font-weight:600;font-size:14.5px;display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.loghead .dot{width:9px;height:9px;border-radius:50%;display:inline-block;flex:none}
+.leaflet-tooltip.logtip{max-width:300px;white-space:normal}
+@media (max-width:860px){ #caption{max-width:calc(100% - 24px);bottom:10px} }
 /* TV mode (?tv, the Fire TV app): styles in tv.css, loaded only in TV mode */
 </style>
 </head>
@@ -188,6 +200,12 @@ body.tv #hint{display:block}
       <div class="meta" id="odoMeta"></div>
     </div>
     <div class="full event hide" id="eventCard"><div class="t" id="evTitle"></div><div class="when" id="evWhen"></div><div class="x" id="evText"></div></div>
+    <div class="card full hide" id="logCard">
+      <div class="label">From the Scientific Log</div>
+      <div class="loghead" id="logHead"></div>
+      <div class="remark" id="logText"></div>
+      <div class="meta" id="logMeta"></div>
+    </div>
     <div class="card full" id="remarkCard">
       <div class="label">From the 1967 voyage log</div>
       <div class="remark" id="remark">—</div>
@@ -195,6 +213,7 @@ body.tv #hint{display:block}
   </aside>
 
   <div id="toast" role="status"></div>
+  <div id="caption" aria-live="polite"></div>
   <div id="hint">◀ ▶ one day &nbsp;·&nbsp; ▲ ▼ zoom &nbsp;·&nbsp; OK play / pause &nbsp;·&nbsp; hold OK: today in 1967 &nbsp;·&nbsp; ⏪ ⏩ slower / faster <small id="scr"></small></div>
 </div>
 
@@ -209,6 +228,7 @@ body.tv #hint{display:block}
     </div>
     <button class="btn" id="today" title="Jump to today's date in 1967, in real time (T)">Today in 1967</button>
     <span id="live">LIVE</span>
+    <button class="btn hide" id="sound" title="Narration (N)" aria-label="Narration on or off">🔇</button>
     <span class="spacer"></span>
     <span id="tlDate" class="hide-sm"></span>
     <button class="btn hide-sm" id="follow" title="Keep the ship in view (F)">Follow ship</button>
@@ -230,7 +250,7 @@ body.tv #hint{display:block}
      This page follows her day by day. It opens on today's date, 1967, and moves in real time.</p>
   <ul>
     <li><kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> one day (with <kbd>Shift</kbd>: one hour) · <kbd>↑</kbd> <kbd>↓</kbd> speed</li>
-    <li><kbd>T</kbd> today in 1967 · <kbd>F</kbd> follow the ship · <kbd>L</kbd> loop · tap the timeline to jump to any date</li>
+    <li><kbd>T</kbd> today in 1967 · <kbd>F</kbd> follow the ship · <kbd>L</kbd> loop · <kbd>N</kbd> narration on/off · tap the timeline to jump to any date</li>
   </ul>
   <p class="small" id="credit"></p>
   <p class="small">Track: the ship's archived navigation. Depth: her echo soundings. Chart and log sheet: the original 1967 documents.
@@ -251,6 +271,7 @@ const Q = new URLSearchParams(location.search);
 const TV = Q.has("tv") || Q.get("mode") === "tv";
 if (TV) document.body.classList.add("tv");
 let TVX = null;   // TV mode only: the behaviour in tv.js (loaded by main() with ?tv). Stays null on the website.
+let LOG = null;   // the Scientific Log marks, captions and narration (logbook.js); null if it didn't load
 const $ = id => document.getElementById(id);
 const K = TV ? Math.max(1, innerWidth / 960) : 1;   // TV: drawn sizes follow the screen width like the vw-sized text
 const DAY = 86400e3, HOUR = 3600e3, MIN = 60e3;
@@ -728,7 +749,7 @@ function setFollow(on, quiet) {
 function setLoop(on) { ui.loop = on; $("loop").classList.toggle("on", on); store.set("loop", on); }
 function fitZoom() { const p = fitPad(); return map.getBoundsZoom(L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78)), false, L.point(p.paddingTopLeft).add(p.paddingBottomRight)); }
 function goToday() { setLive(true); setRate(1, true); seek(todayIn1967(), true); setPlaying(true); setLive(true); toast("Synced to <b>today's date in 1967</b>, moving in real time", 2600); }
-function seek(t, keepLive) { ui.t = Math.min(Math.max(t, YEAR0), YEAR1 - 1); ui.prevT = null; if (!keepLive) setLive(false); render(true); }
+function seek(t, keepLive) { ui.t = Math.min(Math.max(t, YEAR0), YEAR1 - 1); ui.prevT = null; if (!keepLive) setLive(false); if (LOG) LOG.onSeek(); render(true); }
 function step(ms) { seek(ui.t + ms); }
 function faster(d) { setRate(RATES[Math.max(0, Math.min(RATES.length - 1, RATES.indexOf(ui.rate) + d))]); if (d > 0 && !ui.playing) setPlaying(true); }
 /* zoom in whole steps from "the whole voyage" up to the chart's finest detail */
@@ -774,6 +795,7 @@ function bindControls() {
       MediaFastForward: () => TV ? faster(1) : step(7 * DAY), MediaRewind: () => TV ? faster(-1) : step(-7 * DAY),
       MediaTrackNext: () => step(7 * DAY), MediaTrackPrevious: () => step(-7 * DAY), "]": () => step(7 * DAY), "[": () => step(-7 * DAY),
       "+": () => zoomBy(1), "=": () => zoomBy(1), "-": () => zoomBy(-1),
+      n: () => LOG && LOG.toggleSound(), N: () => LOG && LOG.toggleSound(),
       ContextMenu: goToday, t: goToday, T: goToday, f: () => TV || setFollow(!ui.follow), F: () => TV || setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
       Home: () => seek(VSTART - 6 * HOUR), End: () => seek(VEND) };
     const fn = map_[k];
@@ -808,7 +830,8 @@ function render(force) {
   drawCursor();
   $("tlDate").textContent = fdate(ui.t, { month: "short", day: "numeric", year: "numeric" }) + " · " + fclock(ui.t) + " GMT";
   // announce events as they happen during playback
-  if (ui.playing && ui.prevT != null && ui.t > ui.prevT && ui.t - ui.prevT < 30 * DAY) {
+  if (LOG) LOG.tick(s, ui.prevT);   // log marks, captions, narration
+  if (ui.playing && ui.prevT != null && ui.t > ui.prevT && ui.t - ui.prevT < 30 * DAY && !(LOG && LOG.speaking())) {
     let hit = null;
     for (const e of EVENTS) if (e.tm > ui.prevT && e.tm <= ui.t && e.kind !== "depart" && e.kind !== "arrive") hit = e;
     if (hit) toast(`<b>${hit.title}</b><br>${hit.text || ""}`, ui.rate > 100000 ? 3000 : 6000);
@@ -817,7 +840,7 @@ function render(force) {
 }
 function frame(now) {
   const dt = Math.min(0.25, (now - lastReal) / 1000); lastReal = now;
-  if (ui.playing) {
+  if (ui.playing && !(LOG && LOG.holding())) {   // time-lapse waits while a story is told
     if (ui.live) ui.t = todayIn1967();
     else {
       ui.t += dt * ui.rate * 1000;
@@ -832,6 +855,9 @@ function frame(now) {
 }
 
 
+function loadScript(src) {
+  return new Promise((ok, no) => { const s = document.createElement("script"); s.src = src; s.onload = ok; s.onerror = no; document.head.append(s); });
+}
 /* TV mode: load tv.css and tv.js (the website never loads them) */
 function loadTV() {
   const css = new Promise(ok => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tv.css"; l.onload = l.onerror = ok; document.head.append(l); });
@@ -867,6 +893,7 @@ async function main() {
   else if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0]; const z = FITZ + 1.25;
     if (Lx != null) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
   followCopy = null; render(true);
+  try { await loadScript("logbook.js"); await LOG.init(); render(true); } catch (e) { LOG = null; }   // optional
   if (TVX) TVX.ready();
   requestAnimationFrame(frame);
 }
