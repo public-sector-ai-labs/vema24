@@ -1,0 +1,39 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'io.github.publicsectorailabs.vema24'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'io.github.publicsectorailabs.vema24'
+        minSdk 22          // Fire OS 5 and newer
+        targetSdk 34
+        // every GitHub build gets a higher number, so a new app file installs over the old one
+        versionCode((System.getenv('GITHUB_RUN_NUMBER') ?: '1').toInteger())
+        versionName "1.${System.getenv('GITHUB_RUN_NUMBER') ?: '0'}"
+    }
+
+    // A fixed key kept in the repository, so every build can be installed over the last one.
+    // It only identifies this home-made app for sideloading; it is not a secret.
+    signingConfigs {
+        sideload {
+            storeFile file('../sideload.keystore')
+            storePassword 'vema1967'
+            keyAlias 'vema'
+            keyPassword 'vema1967'
+            storeType 'pkcs12'
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.sideload
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}

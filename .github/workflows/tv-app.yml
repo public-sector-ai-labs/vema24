@@ -1,0 +1,42 @@
+# Builds the Fire TV / Android app (android/) and publishes it at a fixed address:
+#   https://github.com/<owner>/<repo>/releases/download/tv-app/vema1967.apk
+# Runs whenever something under android/ changes, or by hand (Actions tab -> Build TV app -> Run workflow).
+name: Build TV app
+
+on:
+  push:
+    paths:
+      - "android/**"
+      - ".github/workflows/tv-app.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Build the app
+        run: gradle -p android assembleRelease --no-daemon --stacktrace
+
+      - name: Publish the app file
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk vema1967.apk
+          gh release delete tv-app --yes --cleanup-tag || true
+          gh release create tv-app vema1967.apk \
+            --title "Vema 1967 - TV app (build ${{ github.run_number }})" \
+            --notes "Install on a Fire TV stick with the Downloader app using: https://github.com/${{ github.repository }}/releases/download/tv-app/vema1967.apk"
