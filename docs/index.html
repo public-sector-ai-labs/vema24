@@ -143,62 +143,7 @@ body.tv #hint{display:block}
 }
 @media (max-width:520px){ .hide-sm{display:none!important} }
 
-/* ---------- TV mode ----------
-   The chart fills the screen. A small card (top right) carries the essentials; the controls and
-   the year strip slide up when a remote button is pressed and tuck away again after a few seconds.
-   Everything is sized in vw (1vw = 1% of the screen width): a Fire TV lays pages out at about
-   960 x 540 and magnifies them, so fixed pixel sizes come out twice as big as intended. */
-body.tv{display:block;font-size:1.3vw;--gap:1.4vw;--r:1.1vw;--card-w:26vw}
-body.tv #stage{position:fixed;inset:0;display:block}
-body.tv #map{position:absolute;inset:0;flex:none;min-height:0}
-body.tv #title{padding:.5vw 1vw;border-radius:var(--r)}
-body.tv #title h1{font-size:1.65vw}
-body.tv #title p{font-size:1vw;margin-top:.15vw}
-body.tv #aboutBtn,body.tv #aboutBtn2,body.tv .leaflet-control-zoom{display:none}
-body.tv #panel{position:absolute;inset:var(--gap) var(--gap) auto auto;width:var(--card-w);max-height:calc(100% - 2 * var(--gap));
-  display:flex;flex-direction:column;gap:.75vw;padding:1vw 1.1vw;border-radius:var(--r);border-width:1px;background:var(--panel);
-  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:hidden;transition:max-height .45s}
-body.tv.show-ui #panel{max-height:calc(100% - var(--tl-h) - 2 * var(--gap))}
-body.tv #posCard,body.tv #odoCard{display:none}
-body.tv .card{padding-top:.6vw}
-body.tv .weekday{font-size:.95vw}
-body.tv .date{font-size:2vw}
-body.tv .clock,body.tv .meta,body.tv .status .sub{font-size:1vw}
-body.tv .pill{font-size:1vw;padding:.2vw .7vw .2vw .55vw;gap:.4vw}
-body.tv .pill::before{width:.6vw;height:.6vw}
-body.tv .label{font-size:.8vw;margin-bottom:.2vw}
-body.tv .leg{font-size:1.2vw}
-body.tv .pos{font-size:1.05vw}
-body.tv .depth{font-size:2vw}
-body.tv .depth small{font-size:1.1vw}
-body.tv #xsec{height:4.6vw;margin-top:.4vw;border-radius:.5vw}
-body.tv .legend,body.tv #posNote{display:none}
-body.tv .odo b{font-size:1.2vw}
-body.tv .bar{height:.35vw;margin-top:.4vw}
-body.tv .remark{font-size:1vw;padding:.5vw .7vw 0;border-bottom:.5vw solid transparent;border-left-width:.25vw;
-  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
-body.tv .event .x{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
-body.tv .event{padding:.6vw .8vw;border-radius:.7vw}
-body.tv .event .t{font-size:1.05vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-body.tv .event .when{font-size:.9vw}
-body.tv .event .x{font-size:1vw}
-body.tv #toast{font-size:1.25vw;max-width:46vw;padding:.7vw 1.3vw;border-radius:.9vw}
-body.tv #timeline{position:fixed;left:0;right:0;bottom:0;z-index:700;padding:.8vw 1.6vw 1vw;background:rgba(16,27,39,.95);
-  transform:translateY(105%);transition:transform .45s ease}
-body.tv.show-ui #timeline{transform:none}
-body.tv #controls{gap:.8vw;margin-bottom:.5vw;flex-wrap:nowrap}
-body.tv .btn{height:3vw;min-width:3vw;padding:0 1vw;font-size:1.2vw;border-radius:.7vw;gap:.4vw}
-body.tv #play{width:4.2vw;font-size:1.4vw}
-body.tv .seg{height:3vw;border-radius:.7vw}
-body.tv .seg button{font-size:1.15vw;padding:0 .9vw}
-body.tv #live{font-size:1vw}
-body.tv #live::before{width:.6vw;height:.6vw}
-body.tv #tlDate{font-size:1.2vw}
-body.tv #tlwrap{height:6vw}
-body.tv #hint{display:block;left:var(--gap);transform:none;bottom:calc(var(--tl-h) + 1vw);font-size:1.1vw;padding:.6vw 1.3vw;border-radius:.9vw;
-  opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
-body.tv.show-ui #hint{opacity:1}
-#hint small{opacity:.55}
+/* TV mode (?tv, the Fire TV app): styles in tv.css, loaded only in TV mode */
 </style>
 </head>
 <body>
@@ -305,6 +250,7 @@ body.tv.show-ui #hint{opacity:1}
 const Q = new URLSearchParams(location.search);
 const TV = Q.has("tv") || Q.get("mode") === "tv";
 if (TV) document.body.classList.add("tv");
+let TVX = null;   // TV mode only: the behaviour in tv.js (loaded by main() with ?tv). Stays null on the website.
 const $ = id => document.getElementById(id);
 const K = TV ? Math.max(1, innerWidth / 960) : 1;   // TV: drawn sizes follow the screen width like the vw-sized text
 const DAY = 86400e3, HOUR = 3600e3, MIN = 60e3;
@@ -430,18 +376,20 @@ function odometer(s) {
 
 /* ---------------------------------------------------------------- chart / map */
 let map, NZ, M_MAX, M_MIN, FITZ, shipMarkers = [], trackRuns = [], lastFi = -1;
-const HD = (devicePixelRatio || 1) >= 1.3 && !Q.has("sd") ? 1 : 0;   // ?sd turns the sharp tiles off
+let HD = (devicePixelRatio || 1) >= 1.3 && !Q.has("sd") ? 1 : 0;   // ?sd turns the sharp tiles off (TV: see tv.js)
 function pxOf(L, lat) {
   return [(L - CT.lon_min_frame) / (CT.lon_max_frame - CT.lon_min_frame) * CT.width,
           (M_MAX - merc(lat)) / (M_MAX - M_MIN) * CT.height];
 }
 const ll = (L, lat) => map.unproject(pxOf(L, lat), NZ);
-const copiesOf = L => [-2, -1, 0, 1, 2].map(k => L + 360 * k).filter(x => x >= FRAME_LO && x <= FRAME_HI);
+const copiesOf = L => TVX ? TVX.copies(L)   // TV hook: one ship
+  : [-2, -1, 0, 1, 2].map(k => L + 360 * k).filter(x => x >= FRAME_LO && x <= FRAME_HI);
 
 function buildMap() {
   NZ = CT.max_zoom; M_MAX = merc(CT.lat_max); M_MIN = merc(CT.lat_min);
-  map = L.map("map", { crs: L.CRS.Simple, zoomSnap: .25, zoomDelta: .5, wheelPxPerZoomLevel: 110, keyboard: false,
-                       attributionControl: false, zoomControl: false, preferCanvas: true, bounceAtZoomLimits: false });
+  map = L.map("map", Object.assign({ crs: L.CRS.Simple, zoomSnap: .25, zoomDelta: .5, wheelPxPerZoomLevel: 110, keyboard: false,
+                       attributionControl: false, zoomControl: false, preferCanvas: true, bounceAtZoomLimits: false },
+                     TVX && TVX.mapOptions));   // TV hook
   if (!TV) L.control.zoom({ position: "bottomleft" }).addTo(map);
   $("map").style.background = CT.background || "#e8c88e";
   const full = L.latLngBounds(map.unproject([0, CT.height], NZ), map.unproject([CT.width, 0], NZ));
@@ -449,8 +397,8 @@ function buildMap() {
   // half size and fetch the next zoom level up, so one chart pixel lands on one screen pixel instead of four.
   const ts = CT.tile_size >> HD;
   document.documentElement.style.setProperty("--tile", `${ts + 1}px`);
-  L.tileLayer("tiles/{z}/{x}/{y}.jpg", { tileSize: ts, zoomOffset: HD, noWrap: true, bounds: full, minNativeZoom: -HD,
-                                         maxNativeZoom: NZ - HD, maxZoom: NZ + 2, minZoom: -2, keepBuffer: TV ? 2 : 3 }).addTo(map);
+  L.tileLayer("tiles/{z}/{x}/{y}.jpg", Object.assign({ tileSize: ts, zoomOffset: HD, noWrap: true, bounds: full, minNativeZoom: -HD,
+                                         maxNativeZoom: NZ - HD, maxZoom: NZ + 2, minZoom: -2, keepBuffer: 3 }, TVX && TVX.tileOptions)).addTo(map);
   map.setMaxBounds(full.pad(0.6));
   const neat = L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78));
   map.fitBounds(neat, fitPad());
@@ -487,7 +435,8 @@ function buildMap() {
     shipMarkers.push(L.marker([0, 0], { icon, interactive: false, keyboard: false, zIndexOffset: 1000 }));
   }
   map.on("dragstart", () => { if (ui.follow && !TV) setFollow(false, true); });
-  window.addEventListener("resize", () => { drawTimelineBase(); measureUI(); FITZ = fitZoom(); });
+  window.addEventListener("resize", () => { drawTimelineBase(); FITZ = fitZoom(); if (TVX) TVX.onResize(); });
+  if (TVX) TVX.setupMap();   // TV hook: home view, zoom levels
 }
 const wideLayout = () => TV || innerWidth > 860;
 const panelW = () => wideLayout() ? $("panel").getBoundingClientRect().width : 0;
@@ -507,6 +456,7 @@ function fitPad() {
    frame, never joined across port stays, and (for the sailed layer) split where
    the depth colour changes. Each point keeps its fractional track index. */
 function buildRuns(byDepth) {
+  const [LO, HI] = TVX ? TVX.trackFrame : [FRAME_LO, FRAME_HI];   // TV hook: the track drawn once
   const bin = new Array(N).fill("#000");
   if (byDepth) for (let i = 0; i < N - 1; i++) bin[i] = depthColor(depthAt((TT[i] + TT[i + 1]) / 2));
   const runs = [];
@@ -516,9 +466,9 @@ function buildRuns(byDepth) {
       if (LEGI[i] !== LEGI[i + 1] || LEGI[i] < 0) { cur = null; continue; }
       const L1 = LON[i] + 360 * k, L2 = LON[i + 1] + 360 * k;
       let a = 0, b = 1;
-      if (L1 === L2) { if (L1 < FRAME_LO || L1 > FRAME_HI) { cur = null; continue; } }
+      if (L1 === L2) { if (L1 < LO || L1 > HI) { cur = null; continue; } }
       else {
-        const ta = (FRAME_LO - L1) / (L2 - L1), tb = (FRAME_HI - L1) / (L2 - L1);
+        const ta = (LO - L1) / (L2 - L1), tb = (HI - L1) / (L2 - L1);
         a = Math.max(0, Math.min(ta, tb)); b = Math.min(1, Math.max(ta, tb));
         if (a >= b) { cur = null; continue; }
       }
@@ -580,6 +530,7 @@ function updateShip(s) {
     }
   });
   followCopy = Ls[0];
+  if (TVX) return TVX.onShip(s, Ls[0]);   // TV hook: follow, card corner
   if (ui.follow && Ls.length && !flying && map.getZoom() > FITZ + 0.3) {
     const target = viewCenterFor(ll(Ls[0], s.lat)), c = map.getCenter();
     const d = map.latLngToContainerPoint(target).distanceTo(map.latLngToContainerPoint(c));
@@ -658,7 +609,7 @@ function drawXsec(s) {
   if (!w) return;
   if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
   const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sky = 14 * K, span = 36 * HOUR, n = 90;
+  const sky = Math.min(14 * K, h / 3.8), q = sky / 14, span = 36 * HOUR, n = 90;   // q: short canvas (TV card)
   const ds = []; let mx = 1000;
   for (let i = 0; i <= n; i++) { const tt = s.t - span + 2 * span * i / n; const d = s.mode === "sea" && tt >= s.leg.t0 && tt <= s.leg.t1 ? depthAt(tt) : null; ds.push(d); if (d != null) mx = Math.max(mx, d); }
   mx = Math.ceil(mx / 1000) * 1000;
@@ -672,15 +623,17 @@ function drawXsec(s) {
     if (!started) { g.moveTo(x, h); g.lineTo(x, Y(d)); started = true; } else g.lineTo(x, Y(d));
   }
   if (started) { g.lineTo(w, h); g.closePath(); g.fillStyle = "#8b6a44"; g.fill(); }
-  if (s.mode !== "sea") { g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${13 * K}px system-ui`; g.textAlign = "center";
+  const fs = n => Math.min(n * K, h * n / 44);   // small labels on a short canvas (TV card)
+  if (s.mode !== "sea") { g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${fs(13)}px system-ui`; g.textAlign = "center";
     g.fillText(s.mode === "port" ? "in port" : s.mode === "before" ? "waiting to sail" : "voyage complete", w / 2, (h + sky) / 2 + 4); g.textAlign = "left"; }
-  else { g.fillStyle = "rgba(243,234,216,.55)"; g.font = `${10 * K}px system-ui`; g.fillText(`${fmtInt(mx)} m`, 4, h - 4); }
-  g.fillStyle = "rgba(243,234,216,.4)"; g.fillText("−36 h", 4, sky - 3); g.textAlign = "right"; g.fillText("+36 h", w - 4, sky - 3); g.textAlign = "left";
+  else { g.fillStyle = "rgba(243,234,216,.55)"; g.font = `${fs(10)}px system-ui`; g.fillText(`${fmtInt(mx)} m`, 4, h - 4); }
+  if (q < 1) g.font = `${sky - 2}px system-ui`;
+  g.fillStyle = "rgba(243,234,216,.4)"; g.fillText("−36 h", 4, sky - 3 * q); g.textAlign = "right"; g.fillText("+36 h", w - 4, sky - 3 * q); g.textAlign = "left";
   // ship at the surface, sounding line straight down
   const cx = w / 2, dNow = ds[n / 2];
   if (dNow != null) { g.strokeStyle = "rgba(242,198,109,.7)"; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(cx, sky); g.lineTo(cx, Y(dNow)); g.stroke(); g.setLineDash([]); }
-  g.fillStyle = "#e3a93c"; g.beginPath(); g.moveTo(cx - 9, sky - 5); g.lineTo(cx + 9, sky - 5); g.lineTo(cx + 6, sky); g.lineTo(cx - 6, sky); g.closePath(); g.fill();
-  g.fillRect(cx - 1, sky - 13, 2, 8);
+  g.fillStyle = "#e3a93c"; g.beginPath(); g.moveTo(cx - 9 * q, sky - 5 * q); g.lineTo(cx + 9 * q, sky - 5 * q); g.lineTo(cx + 6 * q, sky); g.lineTo(cx - 6 * q, sky); g.closePath(); g.fill();
+  g.fillRect(cx - q, sky - 13 * q, 2 * q, 8 * q);
 }
 
 /* ---------------------------------------------------------------- timeline */
@@ -781,11 +734,12 @@ function faster(d) { setRate(RATES[Math.max(0, Math.min(RATES.length - 1, RATES.
 /* zoom in whole steps from "the whole voyage" up to the chart's finest detail */
 let zGoal = null, zGoalAt = 0;
 function zoomBy(dz) {
+  if (TVX) return TVX.zoom(dz);   // TV hook
   const zMax = NZ - HD + 1, n0 = (zGoal != null && performance.now() - zGoalAt < 1200 ? zGoal : map.getZoom()) - FITZ;
   let z = FITZ + (dz > 0 ? Math.floor(n0 + 1e-3) + 1 : Math.ceil(n0 - 1e-3) - 1);
   z = Math.max(FITZ, Math.min(zMax, z));
   const n = Math.round(z - FITZ), of = Math.ceil(zMax - FITZ - 1e-3);
-  store.set("tvzoom", z - FITZ); zGoal = z; zGoalAt = performance.now();
+  zGoal = z; zGoalAt = performance.now();
   if (z <= FITZ + 1e-3) map.flyToBounds(L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78)), Object.assign({ duration: .8 }, fitPad()));
   else if (ui.follow) {
     const s = state(ui.t), Lx = followCopy != null ? followCopy : copiesOf(s.lon)[0];
@@ -793,14 +747,7 @@ function zoomBy(dz) {
   } else map.setZoom(z);
   toast(n === 0 ? "Zoom: <b>the whole voyage</b>" : `Zoom <b>${n}</b> of ${of}` + (n === of ? " · closest" : ""), 1400);
 }
-/* TV: the controls slide up on any remote button and tuck away again after a few seconds */
-let uiTimer = 0;
-function measureUI() { if (TV) document.body.style.setProperty("--tl-h", `${$("timeline").offsetHeight}px`); }
-function showUI(ms) {
-  if (!TV) return;
-  document.body.classList.add("show-ui"); clearTimeout(uiTimer);
-  uiTimer = setTimeout(() => document.body.classList.remove("show-ui"), ms || 8000);
-}
+
 function bindControls() {
   $("play").onclick = () => setPlaying(!ui.playing);
   document.querySelectorAll("#speeds button").forEach(b => b.onclick = () => { setRate(+b.dataset.rate); if (!ui.playing) setPlaying(true); });
@@ -814,7 +761,7 @@ function bindControls() {
   document.addEventListener("keydown", ev => {
     if ($("about").open) return;
     const k = ev.key, sh = ev.shiftKey;
-    showUI();
+    if (TVX) TVX.showUI();   // TV hook: controls slide up
     if (isOK(k)) {
       ev.preventDefault();
       if (!ev.repeat && !okTimer) { okHeld = false; okTimer = setTimeout(() => { okHeld = true; goToday(); }, 900); }
@@ -827,7 +774,7 @@ function bindControls() {
       MediaFastForward: () => TV ? faster(1) : step(7 * DAY), MediaRewind: () => TV ? faster(-1) : step(-7 * DAY),
       MediaTrackNext: () => step(7 * DAY), MediaTrackPrevious: () => step(-7 * DAY), "]": () => step(7 * DAY), "[": () => step(-7 * DAY),
       "+": () => zoomBy(1), "=": () => zoomBy(1), "-": () => zoomBy(-1),
-      ContextMenu: goToday, t: goToday, T: goToday, f: () => setFollow(!ui.follow), F: () => setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
+      ContextMenu: goToday, t: goToday, T: goToday, f: () => TV || setFollow(!ui.follow), F: () => TV || setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
       Home: () => seek(VSTART - 6 * HOUR), End: () => seek(VEND) };
     const fn = map_[k];
     if (fn) { ev.preventDefault(); fn(); hintSeen(); }
@@ -837,7 +784,6 @@ function bindControls() {
     ev.preventDefault();
     if (okTimer) { clearTimeout(okTimer); okTimer = 0; if (!okHeld) setPlaying(!ui.playing); hintSeen(); }
   });
-  if (TV) document.addEventListener("pointermove", () => showUI());
   $("credit").textContent = V.credit || "";
 }
 let toastTimer; function toast(html, ms) { const t = $("toast"); t.innerHTML = html; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2500); }
@@ -885,11 +831,17 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
-/* TV: nudge the whole screen a few pixels every minute so nothing burns in */
-if (TV) setInterval(() => { const a = Date.now() / 60000; document.body.style.transform = `translate(${Math.round(Math.sin(a) * 4)}px, ${Math.round(Math.cos(a * .7) * 3)}px)`; }, 60000);
+
+/* TV mode: load tv.css and tv.js (the website never loads them) */
+function loadTV() {
+  const css = new Promise(ok => { const l = document.createElement("link"); l.rel = "stylesheet"; l.href = "tv.css"; l.onload = l.onerror = ok; document.head.append(l); });
+  const js = new Promise((ok, no) => { const s = document.createElement("script"); s.src = "tv.js"; s.onload = ok; s.onerror = no; document.head.append(s); });
+  return Promise.all([css, js]);
+}
 
 async function main() {
   try {
+    if (TV) { await loadTV(); if (TVX.tileBoost != null) HD = TVX.tileBoost; }
     [V, TR, CT] = await Promise.all([getJSON("data/voyage.json"), getJSON("data/track.json"), getJSON("data/chart_tiles.json")]);
     try { DP = await getJSON("data/depth.json"); } catch { DP = null; }
   } catch (e) {
@@ -905,20 +857,17 @@ async function main() {
   const want = Q.get("date");
   const sp = { real: 1, hour: 3600, day: 86400, week: 604800 }[Q.get("speed")];
   setLoop(store.get("loop", TV));
-  if (Q.has("follow")) setFollow(Q.get("follow") !== "0", true); else setFollow(store.get("follow", TV), true);
+  if (TVX) ui.follow = true;
+  else if (Q.has("follow")) setFollow(Q.get("follow") !== "0", true); else setFollow(store.get("follow", TV), true);
   $("loading").remove();
   if (want) { setRate(sp || store.get("rate", 86400), true); seek(Date.parse(want + (want.length <= 10 ? "T12:00Z" : ""))); setPlaying(false); }
   else if (sp && sp !== 1) { setRate(sp, true); seek(todayIn1967()); setPlaying(true); }
   else goToday();
-  if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0];
-    const z = TV ? Math.min(NZ - HD + 1, FITZ + store.get("tvzoom", 1)) : FITZ + 1.25;
-    if (Lx != null && z > FITZ + 1e-3) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
+  if (TVX) TVX.start();   // TV hook: opening view
+  else if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0]; const z = FITZ + 1.25;
+    if (Lx != null) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
   followCopy = null; render(true);
-  if (TV) {
-    const dpr = devicePixelRatio || 1;
-    $("scr").textContent = ` · screen ${Math.round(innerWidth * dpr)}×${Math.round(innerHeight * dpr)}`;
-    measureUI(); showUI(10000);
-  }
+  if (TVX) TVX.ready();
   requestAnimationFrame(frame);
 }
 main();

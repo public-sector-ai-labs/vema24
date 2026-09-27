@@ -1,0 +1,76 @@
+/* R/V Vema · Voyage 24 · 1967 — TV mode styles.
+   Loaded only in TV mode (?tv, which the Fire TV app opens); the website never loads this file.
+
+   The whole chart sheet fills the screen. A compact card sits inside the chart's border, in the top
+   corner away from the ship (tv.js sets --card-top / --card-side and the .card-left class). The controls
+   and year strip slide up when a remote button is pressed and tuck away again after a few seconds.
+
+   Sizes are in vw (1vw = 1% of the screen width): a Fire TV lays pages out at about 960 x 540 CSS pixels
+   and magnifies them (x4 on a 4K set), so fixed pixel sizes would come out far too big. */
+
+body.tv{display:block;font-size:1.2vw;--gap:1.4vw;--r:1vw;--card-w:33vw;--card-top:7vh;--card-side:5.5vw}
+body.tv #stage{position:fixed;inset:0;display:block}
+body.tv #map{position:absolute;inset:0;flex:none;min-height:0}
+body.tv #title,body.tv #aboutBtn,body.tv #aboutBtn2,body.tv #follow,body.tv .leaflet-control-zoom{display:none}
+
+/* ---------- the card ----------
+   Two columns so it stays short: the voyage keeps south of about 40°N, so the card fits in the open
+   northern part of the chart on either side. */
+body.tv #panel{position:absolute;inset:var(--card-top) var(--card-side) auto auto;width:var(--card-w);
+  max-height:calc(100% - var(--card-top) - var(--gap));display:grid;grid-template-columns:1.35fr 1fr;gap:.45vw 1.2vw;padding:.8vw 1vw .85vw;
+  border-radius:var(--r);border-width:1px;background:rgba(15,24,35,.86);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);
+  overflow:hidden;transition:opacity .6s}
+body.tv.card-left #panel{inset:var(--card-top) auto auto var(--card-side)}
+body.tv.card-moving #panel{opacity:0}
+body.tv.show-ui #panel{max-height:calc(100% - var(--card-top) - var(--tl-h) - var(--gap))}
+body.tv #panel > *{grid-column:1/-1;min-width:0}
+body.tv #panel > :nth-child(1){grid-column:1;grid-row:1}                 /* date and clock */
+body.tv #panel > :nth-child(2){grid-column:1;grid-row:2}                 /* under way / on station */
+body.tv #panel > :nth-child(5){grid-column:2;grid-row:1 / span 2;border-top:0;padding-top:0}   /* depth */
+body.tv #posCard,body.tv #odoCard,body.tv .legend,body.tv #posNote,body.tv #depthAlt{display:none}
+body.tv .card{padding-top:.45vw}
+body.tv .weekday{font-size:.75vw}
+body.tv .date{font-size:1.6vw}
+body.tv .clock,body.tv .meta,body.tv .status .sub{font-size:.85vw}
+body.tv .clock{margin-top:.15vw}
+body.tv .status{gap:.2vw .5vw}
+body.tv .pill{font-size:.85vw;padding:.15vw .6vw .15vw .5vw;gap:.35vw}
+body.tv .pill::before{width:.5vw;height:.5vw}
+body.tv .label{font-size:.68vw;margin-bottom:.15vw}
+body.tv .leg{font-size:1vw}
+body.tv .leg,body.tv #legMeta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.tv .depth{font-size:1.6vw}
+body.tv .depth small{font-size:.9vw}
+body.tv #xsec{height:3.6vw;margin-top:.35vw;border-radius:.4vw}
+body.tv .remark{font-size:.85vw;padding:.35vw .6vw 0;border-bottom:.35vw solid transparent;border-left-width:.22vw;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+body.tv .event{padding:.45vw .7vw;border-radius:.6vw}
+body.tv .event .t{font-size:.9vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.tv .event .when{font-size:.75vw}
+body.tv .event .x{font-size:.85vw;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+/* while a notable event is showing, it takes the place of the log remark */
+body.tv #eventCard:not(.hide) ~ #remarkCard{display:none}
+
+/* ---------- announcements: bottom centre, over the Southern Ocean ---------- */
+body.tv #toast{top:auto;bottom:6vh;font-size:1.15vw;max-width:44vw;padding:.7vw 1.3vw;border-radius:.9vw;
+  transform:translate(-50%,calc(100% + 8vh))}
+body.tv #toast.show{transform:translate(-50%,0)}
+body.tv.show-ui #toast{bottom:calc(var(--tl-h) + 4.5vw)}
+
+/* ---------- controls and year strip (slide up on a remote press) ---------- */
+body.tv #timeline{position:fixed;left:0;right:0;bottom:0;z-index:700;padding:.8vw 1.6vw 1vw;background:rgba(16,27,39,.95);
+  transform:translateY(105%);transition:transform .45s ease}
+body.tv.show-ui #timeline{transform:none}
+body.tv #controls{gap:.8vw;margin-bottom:.5vw;flex-wrap:nowrap}
+body.tv .btn{height:3vw;min-width:3vw;padding:0 1vw;font-size:1.2vw;border-radius:.7vw;gap:.4vw}
+body.tv #play{width:4.2vw;font-size:1.4vw}
+body.tv .seg{height:3vw;border-radius:.7vw}
+body.tv .seg button{font-size:1.15vw;padding:0 .9vw}
+body.tv #live{font-size:1vw}
+body.tv #live::before{width:.6vw;height:.6vw}
+body.tv #tlDate{font-size:1.2vw}
+body.tv #tlwrap{height:6vw}
+body.tv #hint{display:block;left:var(--gap);transform:none;bottom:calc(var(--tl-h) + 1vw);font-size:1.1vw;padding:.6vw 1.3vw;
+  border-radius:.9vw;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+body.tv.show-ui #hint{opacity:1}
+body.tv #hint small{opacity:.55}
