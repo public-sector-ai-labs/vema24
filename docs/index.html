@@ -27,7 +27,7 @@ button{font:inherit;color:inherit}
 .leaflet-container{font:inherit}
 .leaflet-control-attribution{display:none}
 /* overlap tiles by a pixel and draw them normally (Leaflet's additive blend brightens overlaps into light seams) */
-.leaflet-container img.leaflet-tile{width:257px!important;height:257px!important;mix-blend-mode:normal}
+.leaflet-container img.leaflet-tile{width:var(--tile,257px)!important;height:var(--tile,257px)!important;mix-blend-mode:normal}
 
 /* ---------- title ---------- */
 #title{position:absolute;left:var(--gap);top:var(--gap);z-index:500;background:var(--panel);border:1px solid var(--line);
@@ -118,7 +118,7 @@ body.is-live #live{display:inline-flex}
 #about p,#about li{color:#e2d7c1;font-size:14.5px}
 #about .small{color:var(--muted);font-size:12.5px}
 #about kbd{font-family:var(--mono);background:rgba(243,234,216,.1);border-radius:4px;padding:0 5px}
-#toast{position:absolute;left:50%;top:var(--gap);transform:translate(-50%,-150%);z-index:600;max-width:min(520px,90%);
+#toast{position:absolute;left:50%;top:var(--gap);transform:translate(-50%,calc(-100% - var(--gap) - 8px));z-index:600;max-width:min(520px,90%);
   background:#101b27f2;border:1px solid rgba(227,169,60,.5);border-radius:12px;padding:10px 16px;transition:transform .5s;text-align:center}
 #toast.show{transform:translate(-50%,0)}
 #toast b{color:var(--brass-2)}
@@ -143,23 +143,62 @@ body.tv #hint{display:block}
 }
 @media (max-width:520px){ .hide-sm{display:none!important} }
 
-/* ---------- TV mode ---------- */
-body.tv{font-size:20px;--panel-w:520px;--gap:22px}
-body.tv .date{font-size:40px}
-body.tv .depth{font-size:38px}
-body.tv .weekday,body.tv .clock,body.tv .meta,body.tv .status .sub,body.tv .pill{font-size:18px}
-body.tv .leg{font-size:24px}
-body.tv .pos{font-size:20px}
-body.tv .remark{font-size:19px}
-body.tv .label{font-size:14px}
-body.tv #xsec{height:110px}
-body.tv #title h1{font-size:26px}body.tv #title p{font-size:16px}
-body.tv #controls .btn,body.tv #controls .seg{height:44px}
-body.tv #controls .seg button{font-size:17px}
-body.tv #tlwrap{height:110px}
-body.tv #tlDate{font-size:18px}
-body.tv .leaflet-control-zoom{display:none}
-body.tv #aboutBtn{display:none}
+/* ---------- TV mode ----------
+   The chart fills the screen. A small card (top right) carries the essentials; the controls and
+   the year strip slide up when a remote button is pressed and tuck away again after a few seconds.
+   Everything is sized in vw (1vw = 1% of the screen width): a Fire TV lays pages out at about
+   960 x 540 and magnifies them, so fixed pixel sizes come out twice as big as intended. */
+body.tv{display:block;font-size:1.3vw;--gap:1.4vw;--r:1.1vw;--card-w:26vw}
+body.tv #stage{position:fixed;inset:0;display:block}
+body.tv #map{position:absolute;inset:0;flex:none;min-height:0}
+body.tv #title{padding:.5vw 1vw;border-radius:var(--r)}
+body.tv #title h1{font-size:1.65vw}
+body.tv #title p{font-size:1vw;margin-top:.15vw}
+body.tv #aboutBtn,body.tv #aboutBtn2,body.tv .leaflet-control-zoom{display:none}
+body.tv #panel{position:absolute;inset:var(--gap) var(--gap) auto auto;width:var(--card-w);max-height:calc(100% - 2 * var(--gap));
+  display:flex;flex-direction:column;gap:.75vw;padding:1vw 1.1vw;border-radius:var(--r);border-width:1px;background:var(--panel);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);overflow:hidden;transition:max-height .45s}
+body.tv.show-ui #panel{max-height:calc(100% - var(--tl-h) - 2 * var(--gap))}
+body.tv #posCard,body.tv #odoCard{display:none}
+body.tv .card{padding-top:.6vw}
+body.tv .weekday{font-size:.95vw}
+body.tv .date{font-size:2vw}
+body.tv .clock,body.tv .meta,body.tv .status .sub{font-size:1vw}
+body.tv .pill{font-size:1vw;padding:.2vw .7vw .2vw .55vw;gap:.4vw}
+body.tv .pill::before{width:.6vw;height:.6vw}
+body.tv .label{font-size:.8vw;margin-bottom:.2vw}
+body.tv .leg{font-size:1.2vw}
+body.tv .pos{font-size:1.05vw}
+body.tv .depth{font-size:2vw}
+body.tv .depth small{font-size:1.1vw}
+body.tv #xsec{height:4.6vw;margin-top:.4vw;border-radius:.5vw}
+body.tv .legend,body.tv #posNote{display:none}
+body.tv .odo b{font-size:1.2vw}
+body.tv .bar{height:.35vw;margin-top:.4vw}
+body.tv .remark{font-size:1vw;padding:.5vw .7vw 0;border-bottom:.5vw solid transparent;border-left-width:.25vw;
+  display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;overflow:hidden}
+body.tv .event .x{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden}
+body.tv .event{padding:.6vw .8vw;border-radius:.7vw}
+body.tv .event .t{font-size:1.05vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+body.tv .event .when{font-size:.9vw}
+body.tv .event .x{font-size:1vw}
+body.tv #toast{font-size:1.25vw;max-width:46vw;padding:.7vw 1.3vw;border-radius:.9vw}
+body.tv #timeline{position:fixed;left:0;right:0;bottom:0;z-index:700;padding:.8vw 1.6vw 1vw;background:rgba(16,27,39,.95);
+  transform:translateY(105%);transition:transform .45s ease}
+body.tv.show-ui #timeline{transform:none}
+body.tv #controls{gap:.8vw;margin-bottom:.5vw;flex-wrap:nowrap}
+body.tv .btn{height:3vw;min-width:3vw;padding:0 1vw;font-size:1.2vw;border-radius:.7vw;gap:.4vw}
+body.tv #play{width:4.2vw;font-size:1.4vw}
+body.tv .seg{height:3vw;border-radius:.7vw}
+body.tv .seg button{font-size:1.15vw;padding:0 .9vw}
+body.tv #live{font-size:1vw}
+body.tv #live::before{width:.6vw;height:.6vw}
+body.tv #tlDate{font-size:1.2vw}
+body.tv #tlwrap{height:6vw}
+body.tv #hint{display:block;left:var(--gap);transform:none;bottom:calc(var(--tl-h) + 1vw);font-size:1.1vw;padding:.6vw 1.3vw;border-radius:.9vw;
+  opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+body.tv.show-ui #hint{opacity:1}
+#hint small{opacity:.55}
 </style>
 </head>
 <body>
@@ -187,7 +226,7 @@ body.tv #aboutBtn{display:none}
       <div class="leg" id="legName">—</div>
       <div class="meta" id="legMeta"></div>
     </div>
-    <div class="card">
+    <div class="card" id="posCard">
       <div class="label">Position</div>
       <div class="pos" id="pos">—</div>
       <div class="meta" id="posNote"></div>
@@ -198,7 +237,7 @@ body.tv #aboutBtn{display:none}
       <canvas id="xsec" aria-hidden="true"></canvas>
       <div class="legend hide-sm"><span>0</span><i id="legendBar"></i><span>6000+ m</span></div>
     </div>
-    <div class="card full">
+    <div class="card full" id="odoCard">
       <div class="odo"><span class="label" style="margin:0">Distance sailed</span><b id="odo">—</b></div>
       <div class="bar"><i id="odoBar"></i></div>
       <div class="meta" id="odoMeta"></div>
@@ -211,7 +250,7 @@ body.tv #aboutBtn{display:none}
   </aside>
 
   <div id="toast" role="status"></div>
-  <div id="hint">◀ ▶ one day &nbsp;·&nbsp; ▲ ▼ speed &nbsp;·&nbsp; OK play / pause &nbsp;·&nbsp; ⏪ ⏩ one week</div>
+  <div id="hint">◀ ▶ one day &nbsp;·&nbsp; ▲ ▼ zoom &nbsp;·&nbsp; OK play / pause &nbsp;·&nbsp; hold OK: today in 1967 &nbsp;·&nbsp; ⏪ ⏩ slower / faster <small id="scr"></small></div>
 </div>
 
 <div id="timeline">
@@ -267,6 +306,7 @@ const Q = new URLSearchParams(location.search);
 const TV = Q.has("tv") || Q.get("mode") === "tv";
 if (TV) document.body.classList.add("tv");
 const $ = id => document.getElementById(id);
+const K = TV ? Math.max(1, innerWidth / 960) : 1;   // TV: drawn sizes follow the screen width like the vw-sized text
 const DAY = 86400e3, HOUR = 3600e3, MIN = 60e3;
 const RAD = Math.PI / 180, NM_R = 3440.065;
 const FRAME_LO = 60, FRAME_HI = 460;              // the chart spans 60E .. (60E+400) = 100E
@@ -389,7 +429,8 @@ function odometer(s) {
 }
 
 /* ---------------------------------------------------------------- chart / map */
-let map, NZ, M_MAX, M_MIN, shipMarkers = [], trackRuns = [], lastFi = -1;
+let map, NZ, M_MAX, M_MIN, FITZ, shipMarkers = [], trackRuns = [], lastFi = -1;
+const HD = (devicePixelRatio || 1) >= 1.3 && !Q.has("sd") ? 1 : 0;   // ?sd turns the sharp tiles off
 function pxOf(L, lat) {
   return [(L - CT.lon_min_frame) / (CT.lon_max_frame - CT.lon_min_frame) * CT.width,
           (M_MAX - merc(lat)) / (M_MAX - M_MIN) * CT.height];
@@ -404,12 +445,17 @@ function buildMap() {
   if (!TV) L.control.zoom({ position: "bottomleft" }).addTo(map);
   $("map").style.background = CT.background || "#e8c88e";
   const full = L.latLngBounds(map.unproject([0, CT.height], NZ), map.unproject([CT.width, 0], NZ));
-  L.tileLayer("tiles/{z}/{x}/{y}.jpg", { tileSize: CT.tile_size, noWrap: true, bounds: full, minNativeZoom: 0,
-                                         maxNativeZoom: NZ, maxZoom: NZ + 2, minZoom: -2, keepBuffer: 3 }).addTo(map);
+  // Sharp chart on high-density screens (iPad, Fire TV: 2 screen pixels per CSS pixel): draw each tile at
+  // half size and fetch the next zoom level up, so one chart pixel lands on one screen pixel instead of four.
+  const ts = CT.tile_size >> HD;
+  document.documentElement.style.setProperty("--tile", `${ts + 1}px`);
+  L.tileLayer("tiles/{z}/{x}/{y}.jpg", { tileSize: ts, zoomOffset: HD, noWrap: true, bounds: full, minNativeZoom: -HD,
+                                         maxNativeZoom: NZ - HD, maxZoom: NZ + 2, minZoom: -2, keepBuffer: TV ? 2 : 3 }).addTo(map);
   map.setMaxBounds(full.pad(0.6));
   const neat = L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78));
   map.fitBounds(neat, fitPad());
-  map.setMinZoom(map.getZoom() - 0.75);
+  FITZ = map.getZoom();
+  map.setMinZoom(FITZ - 0.75);
   map.setMaxZoom(NZ + 2);
 
   const R = L.canvas({ padding: 0.3 });
@@ -418,14 +464,14 @@ function buildMap() {
                                                    opacity: .55, dashArray: "4 5", interactive: false }).addTo(map);
   // sailed part, coloured by depth; runs are revealed as time passes
   trackRuns = buildRuns(true).map(run => Object.assign(run, {
-    line: L.polyline(run.pts.map(p => p.ll), { renderer: R, color: run.color, weight: TV ? 4.5 : 3.4, opacity: 0,
+    line: L.polyline(run.pts.map(p => p.ll), { renderer: R, color: run.color, weight: TV ? 4.5 * K : 3.4, opacity: 0,
                                              lineCap: "round", lineJoin: "round", interactive: false }).addTo(map), vis: 0 }));
   // events worth a marker
   for (const e of EVENTS) {
     if (!["place", "note", "deep", "story"].includes(e.kind)) continue;
     const p = rawPos(e.tm);
     for (const Lx of copiesOf(p.lon)) {
-      const m = L.circleMarker(ll(Lx, p.lat), { renderer: R, radius: TV ? 6 : 4.5, color: "#2b1d12", weight: 1.2,
+      const m = L.circleMarker(ll(Lx, p.lat), { renderer: R, radius: TV ? 6 * K : 4.5, color: "#2b1d12", weight: 1.2,
                                                fillColor: "#e3a93c", fillOpacity: .95 }).addTo(map);
       m.bindTooltip(e.title, { className: "evtip", direction: "top", offset: [0, -6] });
       m.bindPopup(`<b>${e.title}</b><br><span style="color:#b8ab93">${fdate(e.tm, { month: "long", day: "numeric" })}</span><br>${e.text || ""}`);
@@ -434,25 +480,27 @@ function buildMap() {
   }
   // the ship (one marker per visible copy of her position on the chart)
   for (let i = 0; i < 2; i++) {
-    const icon = L.divIcon({ className: "ship", iconSize: [44, 44], html:
+    const icon = L.divIcon({ className: "ship", iconSize: [44 * K, 44 * K], html:
       `<div class="ring"></div><svg viewBox="-22 -22 44 44"><g class="hull">
         <path d="M0-15 C5-9 6-2 6 6 L5 13 L-5 13 L-6 6 C-6-2 -5-9 0-15Z" fill="#e3a93c" stroke="#2b1d12" stroke-width="1.6"/>
         <circle r="1.6" cy="-6" fill="#2b1d12"/><circle r="1.6" cy="0" fill="#2b1d12"/><circle r="1.6" cy="6" fill="#2b1d12"/></g></svg>` });
     shipMarkers.push(L.marker([0, 0], { icon, interactive: false, keyboard: false, zIndexOffset: 1000 }));
   }
   map.on("dragstart", () => { if (ui.follow && !TV) setFollow(false, true); });
-  window.addEventListener("resize", () => { drawTimelineBase(); });
+  window.addEventListener("resize", () => { drawTimelineBase(); measureUI(); FITZ = fitZoom(); });
 }
+const wideLayout = () => TV || innerWidth > 860;
+const panelW = () => wideLayout() ? $("panel").getBoundingClientRect().width : 0;
 function panelOffset() {  // px the visible map centre sits left of the container centre
-  return innerWidth > 860 ? (parseFloat(getComputedStyle(document.body).getPropertyValue("--panel-w")) + 24) / 2 : 0;
+  return wideLayout() ? (panelW() + 24) / 2 : 0;
 }
 function viewCenterFor(p, zoom) {
   const z = zoom == null ? map.getZoom() : zoom;
   return map.unproject(map.project(p, z).add([panelOffset(), 0]), z);
 }
 function fitPad() {
-  const wide = innerWidth > 860;
-  return { paddingTopLeft: [10, wide ? 60 : 50], paddingBottomRight: [wide ? parseFloat(getComputedStyle(document.body).getPropertyValue("--panel-w")) + 30 : 10, 10] };
+  const top = Math.round($("title").getBoundingClientRect().bottom) + 4;
+  return { paddingTopLeft: [10, top], paddingBottomRight: [wideLayout() ? panelW() + 30 : 10, 10] };
 }
 
 /* Split the track into drawable runs: one per chart copy, clipped to the chart
@@ -532,7 +580,7 @@ function updateShip(s) {
     }
   });
   followCopy = Ls[0];
-  if (ui.follow && Ls.length && !flying) {
+  if (ui.follow && Ls.length && !flying && map.getZoom() > FITZ + 0.3) {
     const target = viewCenterFor(ll(Ls[0], s.lat)), c = map.getCenter();
     const d = map.latLngToContainerPoint(target).distanceTo(map.latLngToContainerPoint(c));
     if (d > innerWidth * .6) { flying = true; map.flyTo(target, map.getZoom(), { duration: 1.2 }); map.once("moveend", () => flying = false); }
@@ -610,7 +658,7 @@ function drawXsec(s) {
   if (!w) return;
   if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
   const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sky = 14, span = 36 * HOUR, n = 90;
+  const sky = 14 * K, span = 36 * HOUR, n = 90;
   const ds = []; let mx = 1000;
   for (let i = 0; i <= n; i++) { const tt = s.t - span + 2 * span * i / n; const d = s.mode === "sea" && tt >= s.leg.t0 && tt <= s.leg.t1 ? depthAt(tt) : null; ds.push(d); if (d != null) mx = Math.max(mx, d); }
   mx = Math.ceil(mx / 1000) * 1000;
@@ -624,9 +672,9 @@ function drawXsec(s) {
     if (!started) { g.moveTo(x, h); g.lineTo(x, Y(d)); started = true; } else g.lineTo(x, Y(d));
   }
   if (started) { g.lineTo(w, h); g.closePath(); g.fillStyle = "#8b6a44"; g.fill(); }
-  if (s.mode !== "sea") { g.fillStyle = "rgba(243,234,216,.6)"; g.font = "13px system-ui"; g.textAlign = "center";
+  if (s.mode !== "sea") { g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${13 * K}px system-ui`; g.textAlign = "center";
     g.fillText(s.mode === "port" ? "in port" : s.mode === "before" ? "waiting to sail" : "voyage complete", w / 2, (h + sky) / 2 + 4); g.textAlign = "left"; }
-  else { g.fillStyle = "rgba(243,234,216,.55)"; g.font = "10px system-ui"; g.fillText(`${fmtInt(mx)} m`, 4, h - 4); }
+  else { g.fillStyle = "rgba(243,234,216,.55)"; g.font = `${10 * K}px system-ui`; g.fillText(`${fmtInt(mx)} m`, 4, h - 4); }
   g.fillStyle = "rgba(243,234,216,.4)"; g.fillText("−36 h", 4, sky - 3); g.textAlign = "right"; g.fillText("+36 h", w - 4, sky - 3); g.textAlign = "left";
   // ship at the surface, sounding line straight down
   const cx = w / 2, dNow = ds[n / 2];
@@ -642,7 +690,7 @@ function drawTimelineBase() {
   const c = $("tl"), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
   const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const axis = 16, band = 12, top = 2, prof = h - axis - band - top - 4;
+  const axis = 16 * K, band = 12 * K, top = 2, prof = h - axis - band - top - 4;
   g.clearRect(0, 0, w, h);
   g.fillStyle = "#0c1a2a"; g.fillRect(0, top, w, prof);
   // depth profile (sea from the top, seafloor filled below)
@@ -658,7 +706,7 @@ function drawTimelineBase() {
       g.lineTo(px, Y(d)); lastX = px;
     }
     if (open) { g.lineTo(lastX, top + prof); g.closePath(); g.fill(); }
-    g.fillStyle = "rgba(243,234,216,.35)"; g.font = "10px system-ui"; g.fillText("depth", 4, top + 11);
+    g.fillStyle = "rgba(243,234,216,.35)"; g.font = `${10 * K}px system-ui`; g.fillText("depth", 4, top + 11 * K);
   }
   // legs: coloured bands, port stays left dark
   const by = top + prof + 2;
@@ -668,13 +716,13 @@ function drawTimelineBase() {
     const key = L.chief_scientist || L.id; if (!(key in chiefIdx)) chiefIdx[key] = ci++;
     const x0 = tlX(L.t0, w), x1 = tlX(L.t1, w);
     g.fillStyle = tones[chiefIdx[key] % tones.length]; g.fillRect(x0, by, Math.max(1, x1 - x0), band);
-    if (x1 - x0 > 34 && !TV || x1 - x0 > 60) { g.fillStyle = "rgba(255,255,255,.85)"; g.font = `${TV ? 12 : 9.5}px system-ui`; g.fillText(`${L.k + 1}`, x0 + 3, by + band - 3); }
+    if (x1 - x0 > 34 && !TV || x1 - x0 > 60) { g.fillStyle = "rgba(255,255,255,.85)"; g.font = `${TV ? 12 * K : 9.5}px system-ui`; g.fillText(`${L.k + 1}`, x0 + 3, by + band - 3); }
   });
   // events
   g.fillStyle = "#e3a93c";
   for (const e of EVENTS) if (!["depart", "arrive"].includes(e.kind)) { const x = tlX(e.tm, w); g.beginPath(); g.moveTo(x, by - 1); g.lineTo(x - 3.5, by - 7); g.lineTo(x + 3.5, by - 7); g.closePath(); g.fill(); }
   // months
-  g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${TV ? 14 : 11}px system-ui`; g.strokeStyle = "rgba(243,234,216,.18)";
+  g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${TV ? 14 * K : 11}px system-ui`; g.strokeStyle = "rgba(243,234,216,.18)";
   for (let m = 0; m < 12; m++) {
     const x = tlX(Date.UTC(1967, m, 1), w);
     g.beginPath(); g.moveTo(x + .5, top); g.lineTo(x + .5, h - axis + 3); g.stroke();
@@ -689,9 +737,9 @@ function drawCursor() {
   if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
   const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
   const x = tlX(ui.t, w);
-  g.fillStyle = "rgba(15,24,35,.45)"; g.fillRect(x, 0, w - x, h - 16);   // the future is dimmed
-  g.strokeStyle = "#f2c66d"; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h - 14); g.stroke();
-  g.fillStyle = "#f2c66d"; g.beginPath(); g.arc(x, h - 14, 5, 0, 7); g.fill();
+  g.fillStyle = "rgba(15,24,35,.45)"; g.fillRect(x, 0, w - x, h - 16 * K);   // the future is dimmed
+  g.strokeStyle = "#f2c66d"; g.lineWidth = 2 * K; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h - 14 * K); g.stroke();
+  g.fillStyle = "#f2c66d"; g.beginPath(); g.arc(x, h - 14 * K, 5 * K, 0, 7); g.fill();
 }
 function bindTimeline() {
   const wrapEl = $("tlwrap"), tip = $("tip");
@@ -729,6 +777,30 @@ function fitZoom() { const p = fitPad(); return map.getBoundsZoom(L.latLngBounds
 function goToday() { setLive(true); setRate(1, true); seek(todayIn1967(), true); setPlaying(true); setLive(true); toast("Synced to <b>today's date in 1967</b>, moving in real time", 2600); }
 function seek(t, keepLive) { ui.t = Math.min(Math.max(t, YEAR0), YEAR1 - 1); ui.prevT = null; if (!keepLive) setLive(false); render(true); }
 function step(ms) { seek(ui.t + ms); }
+function faster(d) { setRate(RATES[Math.max(0, Math.min(RATES.length - 1, RATES.indexOf(ui.rate) + d))]); if (d > 0 && !ui.playing) setPlaying(true); }
+/* zoom in whole steps from "the whole voyage" up to the chart's finest detail */
+let zGoal = null, zGoalAt = 0;
+function zoomBy(dz) {
+  const zMax = NZ - HD + 1, n0 = (zGoal != null && performance.now() - zGoalAt < 1200 ? zGoal : map.getZoom()) - FITZ;
+  let z = FITZ + (dz > 0 ? Math.floor(n0 + 1e-3) + 1 : Math.ceil(n0 - 1e-3) - 1);
+  z = Math.max(FITZ, Math.min(zMax, z));
+  const n = Math.round(z - FITZ), of = Math.ceil(zMax - FITZ - 1e-3);
+  store.set("tvzoom", z - FITZ); zGoal = z; zGoalAt = performance.now();
+  if (z <= FITZ + 1e-3) map.flyToBounds(L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78)), Object.assign({ duration: .8 }, fitPad()));
+  else if (ui.follow) {
+    const s = state(ui.t), Lx = followCopy != null ? followCopy : copiesOf(s.lon)[0];
+    flying = true; map.flyTo(viewCenterFor(ll(Lx, s.lat), z), z, { duration: .8 }); map.once("moveend", () => flying = false);
+  } else map.setZoom(z);
+  toast(n === 0 ? "Zoom: <b>the whole voyage</b>" : `Zoom <b>${n}</b> of ${of}` + (n === of ? " · closest" : ""), 1400);
+}
+/* TV: the controls slide up on any remote button and tuck away again after a few seconds */
+let uiTimer = 0;
+function measureUI() { if (TV) document.body.style.setProperty("--tl-h", `${$("timeline").offsetHeight}px`); }
+function showUI(ms) {
+  if (!TV) return;
+  document.body.classList.add("show-ui"); clearTimeout(uiTimer);
+  uiTimer = setTimeout(() => document.body.classList.remove("show-ui"), ms || 8000);
+}
 function bindControls() {
   $("play").onclick = () => setPlaying(!ui.playing);
   document.querySelectorAll("#speeds button").forEach(b => b.onclick = () => { setRate(+b.dataset.rate); if (!ui.playing) setPlaying(true); });
@@ -736,23 +808,40 @@ function bindControls() {
   $("follow").onclick = () => setFollow(!ui.follow);
   $("loop").onclick = () => setLoop(!ui.loop);
   $("aboutBtn2").onclick = () => $("about").showModal();
+  // OK / Space: a press plays or pauses; holding it for a second jumps to today's date in 1967
+  let okTimer = 0, okHeld = false;
+  const isOK = k => k === "Enter" || k === " ";
   document.addEventListener("keydown", ev => {
     if ($("about").open) return;
     const k = ev.key, sh = ev.shiftKey;
-    const map_ = { " ": () => setPlaying(!ui.playing), Enter: () => setPlaying(!ui.playing), MediaPlayPause: () => setPlaying(!ui.playing),
+    showUI();
+    if (isOK(k)) {
+      ev.preventDefault();
+      if (!ev.repeat && !okTimer) { okHeld = false; okTimer = setTimeout(() => { okHeld = true; goToday(); }, 900); }
+      return;
+    }
+    const map_ = { MediaPlayPause: () => setPlaying(!ui.playing),
       ArrowRight: () => step(sh ? HOUR : DAY), ArrowLeft: () => step(sh ? -HOUR : -DAY),
-      MediaFastForward: () => step(7 * DAY), MediaRewind: () => step(-7 * DAY), MediaTrackNext: () => step(7 * DAY), MediaTrackPrevious: () => step(-7 * DAY),
-      ArrowUp: () => { setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(ui.rate) + 1)]); if (!ui.playing) setPlaying(true); },
-      ArrowDown: () => { setRate(RATES[Math.max(0, RATES.indexOf(ui.rate) - 1)]); },
-      t: goToday, T: goToday, f: () => setFollow(!ui.follow), F: () => setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
+      // TV remote: up/down zoom, rewind/fast-forward change speed. Keyboard: up/down speed, [ ] one week.
+      ArrowUp: () => TV ? zoomBy(1) : faster(1), ArrowDown: () => TV ? zoomBy(-1) : faster(-1),
+      MediaFastForward: () => TV ? faster(1) : step(7 * DAY), MediaRewind: () => TV ? faster(-1) : step(-7 * DAY),
+      MediaTrackNext: () => step(7 * DAY), MediaTrackPrevious: () => step(-7 * DAY), "]": () => step(7 * DAY), "[": () => step(-7 * DAY),
+      "+": () => zoomBy(1), "=": () => zoomBy(1), "-": () => zoomBy(-1),
+      ContextMenu: goToday, t: goToday, T: goToday, f: () => setFollow(!ui.follow), F: () => setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
       Home: () => seek(VSTART - 6 * HOUR), End: () => seek(VEND) };
     const fn = map_[k];
     if (fn) { ev.preventDefault(); fn(); hintSeen(); }
   });
+  document.addEventListener("keyup", ev => {
+    if (!isOK(ev.key) || $("about").open) return;
+    ev.preventDefault();
+    if (okTimer) { clearTimeout(okTimer); okTimer = 0; if (!okHeld) setPlaying(!ui.playing); hintSeen(); }
+  });
+  if (TV) document.addEventListener("pointermove", () => showUI());
   $("credit").textContent = V.credit || "";
 }
 let toastTimer; function toast(html, ms) { const t = $("toast"); t.innerHTML = html; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2500); }
-function hintSeen() { const h = $("hint"); if (h) h.style.opacity = 0; }
+function hintSeen() { if (TV) return; const h = $("hint"); if (h) h.style.opacity = 0; }
 let wakeLock = null;
 async function keepAwake(on) {
   try {
@@ -821,10 +910,15 @@ async function main() {
   if (want) { setRate(sp || store.get("rate", 86400), true); seek(Date.parse(want + (want.length <= 10 ? "T12:00Z" : ""))); setPlaying(false); }
   else if (sp && sp !== 1) { setRate(sp, true); seek(todayIn1967()); setPlaying(true); }
   else goToday();
-  if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0]; const z = fitZoom() + (TV ? 1 : 1.25);
-    if (Lx != null) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
+  if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0];
+    const z = TV ? Math.min(NZ - HD + 1, FITZ + store.get("tvzoom", 1)) : FITZ + 1.25;
+    if (Lx != null && z > FITZ + 1e-3) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
   followCopy = null; render(true);
-  if (TV) setTimeout(hintSeen, 12000);
+  if (TV) {
+    const dpr = devicePixelRatio || 1;
+    $("scr").textContent = ` · screen ${Math.round(innerWidth * dpr)}×${Math.round(innerHeight * dpr)}`;
+    measureUI(); showUI(10000);
+  }
   requestAnimationFrame(frame);
 }
 main();

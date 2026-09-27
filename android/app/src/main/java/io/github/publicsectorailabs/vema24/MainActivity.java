@@ -92,9 +92,21 @@ public class MainActivity extends Activity {
     }
 
     @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        // The Menu button (three lines) never reaches web pages on its own; hand it over as "today in 1967"
+        if (event.getKeyCode() == KeyEvent.KEYCODE_MENU) {
+            if (event.getAction() == KeyEvent.ACTION_UP) {
+                web.evaluateJavascript("document.dispatchEvent(new KeyboardEvent('keydown',{key:'ContextMenu'}))", null);
+            }
+            return true;
+        }
+        return super.dispatchKeyEvent(event);
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         // Back leaves the app; every other remote button goes to the page
-        // (arrows = days, OK = play/pause, up/down = speed, rewind/fast-forward = weeks)
+        // (left/right = days, up/down = zoom, OK = play/pause, hold OK = today, rewind/fast-forward = speed)
         if (keyCode == KeyEvent.KEYCODE_BACK) { finish(); return true; }
         return super.onKeyDown(keyCode, event);
     }
