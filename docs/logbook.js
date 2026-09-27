@@ -101,14 +101,14 @@ LOG = (function () {
   }
   function enqueue(c) {
     if (queue.includes(c) || cur === c) return;
-    queue.push(Object.assign(c, { queuedAt: performance.now() }));
+    queue.push(Object.assign(c, { queuedAt: performance.now(), greet: false }));
     queue.sort((a, b) => (PRIORITY[b.kind] || 0) - (PRIORITY[a.kind] || 0) || a.t - b.t);
     queue.length = Math.min(queue.length, 3);
   }
   function playNext() {
     if (cur || !queue.length) return;
     // a clip that has waited more than 20 seconds belongs to a moment already past
-    queue = queue.filter(c => performance.now() - c.queuedAt < 20000);
+    queue = queue.filter(c => c.greet || performance.now() - c.queuedAt < 20000);
     const c = queue.shift();
     if (!c) return;
     cur = c;
@@ -150,14 +150,19 @@ LOG = (function () {
     if (on) greet();
   }
   function greet() {
-    // on turning the sound on: the voyage introduction the very first time, else this morning's line
+    // when the TV starts or the sound is turned on: the voyage introduction (the very first time only),
+    // this morning's line, then the current leg from the voyage log - its departure clip with the log's
+    // summary of the leg, or the arrival clip when she's in port
     if (!sound || !clips.length) return;
+    const now = performance.now(), order = [];
     const intro = clips.find(c => c.kind === "intro");
-    if (intro && !store.get("introHeard", false)) { store.set("introHeard", true); enqueue(intro); }
-    if (ui.rate <= 3600) {
-      const i = byTime(clipTimes, ui.t) - 1;
-      for (let j = i; j >= 0 && ui.t - clips[j].t < 16 * HOUR; j--) if (clips[j].kind === "daily") { enqueue(clips[j]); break; }
-    }
+    if (intro && !store.get("introHeard", false)) { store.set("introHeard", true); order.push(intro); }
+    const i = byTime(clipTimes, ui.t) - 1;
+    if (ui.rate <= 3600)
+      for (let j = i; j >= 0 && ui.t - clips[j].t < 16 * HOUR; j--) if (clips[j].kind === "daily") { order.push(clips[j]); break; }
+    for (let j = i; j >= 0; j--) if (clips[j].kind === "leg") { order.push(clips[j]); break; }
+    stop();
+    queue = order.map(c => Object.assign(c, { queuedAt: now, greet: true }));      // played in this order, however long
     playNext();
   }
 
