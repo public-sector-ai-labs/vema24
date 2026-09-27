@@ -1,0 +1,542 @@
+{
+ "title": "R/V Vema Voyage 24, 1967",
+ "totals": {
+  "miles": 53968,
+  "steaming_hours": 5787,
+  "station_hours": 1075,
+  "port_days": 46,
+  "sea_days": 288
+ },
+ "ports": {
+  "New York": [
+   40.69,
+   -74.03
+  ],
+  "Miami": [
+   25.77,
+   -80.17
+  ],
+  "Cristobal": [
+   9.35,
+   -79.91
+  ],
+  "Balboa": [
+   8.95,
+   -79.57
+  ],
+  "Honolulu": [
+   21.31,
+   -157.87
+  ],
+  "Midway": [
+   28.21,
+   -177.38
+  ],
+  "Manila": [
+   14.59,
+   120.97
+  ],
+  "Townsville": [
+   -19.25,
+   146.82
+  ],
+  "Darwin": [
+   -12.46,
+   130.84
+  ],
+  "Mauritius": [
+   -20.16,
+   57.5
+  ],
+  "Cape Town": [
+   -33.91,
+   18.43
+  ],
+  "Rio de Janeiro": [
+   -22.9,
+   -43.17
+  ]
+ },
+ "legs": [
+  {
+   "id": "V2401",
+   "from": "New York",
+   "to": "Miami",
+   "depart": "1967-01-16",
+   "arrive": "1967-01-30",
+   "chief_scientist": "J.L. Worzel",
+   "remarks": "Moderate weather - successful shakedown.",
+   "cum_miles": 2695,
+   "cum_steam_h": 266,
+   "cum_station_h": 44,
+   "avg_knots": 9.4,
+   "number": 1,
+   "start": "1967-01-16T18:00Z",
+   "end": "1967-01-30T12:12Z",
+   "i0": 0,
+   "i1": 242,
+   "nm": 2719.3
+  },
+  {
+   "id": "V2402",
+   "from": "Miami",
+   "to": "Cristobal",
+   "depart": "1967-01-31",
+   "arrive": "1967-02-19",
+   "chief_scientist": "J.L. Worzel",
+   "remarks": "Typical Gulf of Mexico weather (sloppy) - berthed Cristobal (transit 21st).",
+   "cum_miles": 6574,
+   "cum_steam_h": 702,
+   "cum_station_h": 83,
+   "avg_knots": 9.3,
+   "number": 2,
+   "start": "1967-01-31T15:13Z",
+   "end": "1967-02-19T12:44Z",
+   "i0": 243,
+   "i1": 611,
+   "nm": 3906.9
+  },
+  {
+   "id": "V2403",
+   "from": "Balboa",
+   "to": "Honolulu",
+   "depart": "1967-02-21",
+   "arrive": "1967-03-23",
+   "chief_scientist": "J.L. Worzel",
+   "remarks": "Proceeded along Lats. 1-5 degs. to approx. 150W. All good weather.",
+   "cum_miles": 12636,
+   "cum_steam_h": 1314,
+   "cum_station_h": 177,
+   "avg_knots": 9.7,
+   "number": 3,
+   "start": "1967-02-22T04:26Z",
+   "end": "1967-03-23T16:00Z",
+   "i0": 612,
+   "i1": 961,
+   "nm": 6205.4
+  },
+  {
+   "id": "V2404",
+   "from": "Honolulu",
+   "to": "Midway",
+   "depart": "1967-03-27",
+   "arrive": "1967-04-22",
+   "chief_scientist": "G.M. Bryan",
+   "remarks": "Fine weather.",
+   "cum_miles": 17072,
+   "cum_steam_h": 1788,
+   "cum_station_h": 326,
+   "avg_knots": 9.5,
+   "number": 4,
+   "start": "1967-03-27T20:25Z",
+   "end": "1967-04-22T17:45Z",
+   "i0": 962,
+   "i1": 1264,
+   "nm": 4454.5
+  },
+  {
+   "id": "V2405",
+   "from": "Midway",
+   "to": "Manila",
+   "depart": "1967-04-25",
+   "arrive": "1967-05-26",
+   "chief_scientist": "G.M. Bryan",
+   "remarks": "Dateline crossing - #1 Aux. GM burned main bearings, etc. Fine weather.",
+   "cum_miles": 22864,
+   "cum_steam_h": 2398,
+   "cum_station_h": 426,
+   "avg_knots": 9.5,
+   "number": 5,
+   "start": "1967-04-25T21:16Z",
+   "end": "1967-05-25T12:17Z",
+   "i0": 1265,
+   "i1": 1662,
+   "nm": 5849.0
+  },
+  {
+   "id": "V2406",
+   "from": "Manila",
+   "to": "Manila",
+   "depart": "1967-05-30",
+   "arrive": "1967-06-12",
+   "chief_scientist": "W.J. Ludwig",
+   "remarks": "Rendezvoused with Toshi Maru in Subic Bay - loaded powder. Carried out seismic program South China Sea. Weather terrible.",
+   "cum_miles": 24564,
+   "cum_steam_h": 2598,
+   "cum_station_h": 546,
+   "avg_knots": 9.5,
+   "number": 6,
+   "start": "1967-05-31T11:48Z",
+   "end": "1967-06-11T20:07Z",
+   "i0": 1663,
+   "i1": 1868,
+   "nm": 1772.8
+  },
+  {
+   "id": "V2407",
+   "from": "Manila",
+   "to": "Townsville",
+   "depart": "1967-06-16",
+   "arrive": "1967-07-13",
+   "chief_scientist": "W.J. Ludwig",
+   "remarks": "Wonderful weather - rendezvoused in Queen Carola Hbr, Bougainville for termination of program with Japanese \"Toshi Maru\".",
+   "cum_miles": 29190,
+   "cum_steam_h": 3073,
+   "cum_station_h": 692,
+   "avg_knots": 9.5,
+   "number": 7,
+   "start": "1967-06-16T03:14Z",
+   "end": "1967-07-12T22:45Z",
+   "i0": 1869,
+   "i1": 2211,
+   "nm": 4890.0
+  },
+  {
+   "id": "V2408",
+   "from": "Townsville",
+   "to": "Townsville",
+   "depart": "1967-07-17",
+   "arrive": "1967-08-09",
+   "chief_scientist": "R. Houtz",
+   "remarks": "Joint seismic refraction program with HMAS \"Diamantina\" - very successful.",
+   "cum_miles": 32860,
+   "cum_steam_h": 3464,
+   "cum_station_h": 834,
+   "avg_knots": 9.5,
+   "number": 8,
+   "start": "1967-07-17T21:02Z",
+   "end": "1967-08-08T22:38Z",
+   "i0": 2212,
+   "i1": 2565,
+   "nm": 3693.7
+  },
+  {
+   "id": "V2409",
+   "from": "Townsville",
+   "to": "Darwin",
+   "depart": "1967-08-13",
+   "arrive": "1967-08-20",
+   "chief_scientist": "T.D. Aitken",
+   "remarks": "Via Torres Strait, Dundas Strait & Clarence Strait. Torres Strait Pilot \"Bowe\" - Dundas & Clarence Strait Pilot \"Kohler\". 6 Kts circulating currents?",
+   "cum_miles": 34560,
+   "cum_steam_h": 3625,
+   "cum_station_h": 839,
+   "avg_knots": 9.5,
+   "number": 9,
+   "start": "1967-08-13T02:12Z",
+   "end": "1967-08-20T01:21Z",
+   "i0": 2566,
+   "i1": 2705,
+   "nm": 1702.0
+  },
+  {
+   "id": "V2410",
+   "from": "Darwin",
+   "to": "Mauritius",
+   "depart": "1967-08-22",
+   "arrive": "1967-09-14",
+   "chief_scientist": "T.D. Aitken",
+   "remarks": "Fine weather - broke stub shaft of coring winch - whole new gear train installed by Ludas in Mauritius.",
+   "cum_miles": 39882,
+   "cum_steam_h": 4133,
+   "cum_station_h": 877,
+   "avg_knots": 9.5,
+   "number": 10,
+   "start": "1967-08-22T10:36Z",
+   "end": "1967-09-14T05:04Z",
+   "i0": 2706,
+   "i1": 2991,
+   "nm": 5318.9
+  },
+  {
+   "id": "V2411",
+   "from": "Mauritius",
+   "to": "Cape Town",
+   "depart": "1967-09-21",
+   "arrive": "1967-10-12",
+   "chief_scientist": "T.D. Aitken",
+   "remarks": "Very poor weather - 2 heavy gales.",
+   "cum_miles": 43677,
+   "cum_steam_h": 4573,
+   "cum_station_h": 922,
+   "avg_knots": 9.5,
+   "number": 11,
+   "start": "1967-09-21T05:52Z",
+   "end": "1967-10-11T18:26Z",
+   "i0": 2992,
+   "i1": 3317,
+   "nm": 3888.8
+  },
+  {
+   "id": "V2412",
+   "from": "Cape Town",
+   "to": "Rio de Janeiro",
+   "depart": "1967-10-16",
+   "arrive": "1967-11-14",
+   "chief_scientist": "T.D. Aitken",
+   "remarks": "Mod. weather, head sea & swell for first 2 weeks. Last 5 days on reduced speed for sonobuoys.",
+   "cum_miles": 48368,
+   "cum_steam_h": 5175,
+   "cum_station_h": 1012,
+   "avg_knots": 9.3,
+   "number": 12,
+   "start": "1967-10-16T11:06Z",
+   "end": "1967-11-14T04:16Z",
+   "i0": 3318,
+   "i1": 3756,
+   "nm": 4674.0
+  },
+  {
+   "id": "V2413",
+   "from": "Rio de Janeiro",
+   "to": "Miami",
+   "depart": "1967-11-17",
+   "arrive": "1967-12-15",
+   "chief_scientist": "R. (Sam) Gerard",
+   "remarks": "Stop at Barbados for fuel - fuel consumption high due adverse weather - currents and very heavy marine growth on bottom.",
+   "cum_miles": 53968,
+   "cum_steam_h": 5787,
+   "cum_station_h": 1075,
+   "avg_knots": 9.5,
+   "number": 13,
+   "start": "1967-11-17T12:30Z",
+   "end": "1967-12-15T10:48Z",
+   "i0": 3757,
+   "i1": 4165,
+   "nm": 5668.9
+  }
+ ],
+ "events": [
+  {
+   "time": "1967-01-16T18:00Z",
+   "kind": "depart",
+   "title": "Departed New York",
+   "text": "Leg 1: New York to Miami. Chief scientist J.L. Worzel."
+  },
+  {
+   "time": "1967-01-30T12:12Z",
+   "kind": "arrive",
+   "title": "Arriving Miami",
+   "text": "Moderate weather - successful shakedown."
+  },
+  {
+   "time": "1967-01-31T15:13Z",
+   "kind": "depart",
+   "title": "Departed Miami",
+   "text": "Leg 2: Miami to Cristobal. Chief scientist J.L. Worzel."
+  },
+  {
+   "time": "1967-02-19T12:44Z",
+   "kind": "arrive",
+   "title": "Arriving Cristobal",
+   "text": "Typical Gulf of Mexico weather (sloppy) - berthed Cristobal (transit 21st)."
+  },
+  {
+   "time": "1967-02-21T14:00Z",
+   "kind": "note",
+   "title": "Panama Canal",
+   "text": "Transited the Panama Canal from Cristobal to Balboa (10 hours)."
+  },
+  {
+   "time": "1967-02-22T04:26Z",
+   "kind": "depart",
+   "title": "Departed Balboa",
+   "text": "Leg 3: Balboa to Honolulu. Chief scientist J.L. Worzel."
+  },
+  {
+   "time": "1967-03-23T16:00Z",
+   "kind": "arrive",
+   "title": "Arriving Honolulu",
+   "text": "Proceeded along Lats. 1-5 degs. to approx. 150W. All good weather."
+  },
+  {
+   "time": "1967-03-27T20:25Z",
+   "kind": "depart",
+   "title": "Departed Honolulu",
+   "text": "Leg 4: Honolulu to Midway. Chief scientist G.M. Bryan."
+  },
+  {
+   "time": "1967-04-04T17:41Z",
+   "kind": "note",
+   "title": "Crossed the International Date Line",
+   "text": "Westbound: the calendar jumps a day ahead."
+  },
+  {
+   "time": "1967-04-20T18:19Z",
+   "kind": "note",
+   "title": "Crossed the International Date Line",
+   "text": "Eastbound: the same date happens twice."
+  },
+  {
+   "time": "1967-04-22T17:45Z",
+   "kind": "arrive",
+   "title": "Arriving Midway",
+   "text": "Fine weather."
+  },
+  {
+   "time": "1967-04-25T21:16Z",
+   "kind": "depart",
+   "title": "Departed Midway",
+   "text": "Leg 5: Midway to Manila. Chief scientist G.M. Bryan."
+  },
+  {
+   "time": "1967-04-29T15:22Z",
+   "kind": "note",
+   "title": "Crossed the International Date Line",
+   "text": "Westbound: the calendar jumps a day ahead."
+  },
+  {
+   "time": "1967-05-25T12:17Z",
+   "kind": "arrive",
+   "title": "Arriving Manila",
+   "text": "Dateline crossing - #1 Aux. GM burned main bearings, etc. Fine weather."
+  },
+  {
+   "time": "1967-05-31T11:48Z",
+   "kind": "depart",
+   "title": "Departed Manila",
+   "text": "Leg 6: Manila to Manila. Chief scientist W.J. Ludwig."
+  },
+  {
+   "time": "1967-05-31T11:48Z",
+   "kind": "place",
+   "title": "Subic Bay",
+   "text": "Rendezvous with the Japanese ship Toshi Maru in Subic Bay; loaded explosives (\"powder\") for the seismic program.",
+   "lat": 14.8,
+   "lon": 120.27
+  },
+  {
+   "time": "1967-06-11T20:07Z",
+   "kind": "arrive",
+   "title": "Arriving Manila",
+   "text": "Rendezvoused with Toshi Maru in Subic Bay - loaded powder. Carried out seismic program South China Sea. Weather terrible."
+  },
+  {
+   "time": "1967-06-16T03:14Z",
+   "kind": "depart",
+   "title": "Departed Manila",
+   "text": "Leg 7: Manila to Townsville. Chief scientist W.J. Ludwig."
+  },
+  {
+   "time": "1967-07-03T09:48Z",
+   "kind": "note",
+   "title": "Crossed the Equator",
+   "text": "Into the Southern Hemisphere."
+  },
+  {
+   "time": "1967-07-07T02:50Z",
+   "kind": "place",
+   "title": "Queen Carola Harbour, Bougainville",
+   "text": "Rendezvous in Queen Carola Harbour to end the joint seismic program with the Toshi Maru.",
+   "lat": -5.167,
+   "lon": 154.55
+  },
+  {
+   "time": "1967-07-08T07:21Z",
+   "kind": "deep",
+   "title": "Deepest sounding of the voyage",
+   "text": "8,839 m (4,833 fathoms, 28,999 ft) of water under the keel."
+  },
+  {
+   "time": "1967-07-12T22:45Z",
+   "kind": "arrive",
+   "title": "Arriving Townsville",
+   "text": "Wonderful weather - rendezvoused in Queen Carola Hbr, Bougainville for termination of program with Japanese \"Toshi Maru\"."
+  },
+  {
+   "time": "1967-07-17T21:02Z",
+   "kind": "depart",
+   "title": "Departed Townsville",
+   "text": "Leg 8: Townsville to Townsville. Chief scientist R. Houtz."
+  },
+  {
+   "time": "1967-08-08T22:38Z",
+   "kind": "arrive",
+   "title": "Arriving Townsville",
+   "text": "Joint seismic refraction program with HMAS \"Diamantina\" - very successful."
+  },
+  {
+   "time": "1967-08-13T02:12Z",
+   "kind": "depart",
+   "title": "Departed Townsville",
+   "text": "Leg 9: Townsville to Darwin. Chief scientist T.D. Aitken."
+  },
+  {
+   "time": "1967-08-17T01:37Z",
+   "kind": "place",
+   "title": "Torres Strait",
+   "text": "Through Torres Strait with pilot \"Bowe\" aboard; then Dundas and Clarence Straits with pilot \"Kohler\".",
+   "lat": -10.6,
+   "lon": 142.2
+  },
+  {
+   "time": "1967-08-20T01:21Z",
+   "kind": "arrive",
+   "title": "Arriving Darwin",
+   "text": "Via Torres Strait, Dundas Strait & Clarence Strait. Torres Strait Pilot \"Bowe\" - Dundas & Clarence Strait Pilot \"Kohler\". 6 Kts circulating currents?"
+  },
+  {
+   "time": "1967-08-22T10:36Z",
+   "kind": "depart",
+   "title": "Departed Darwin",
+   "text": "Leg 10: Darwin to Mauritius. Chief scientist T.D. Aitken."
+  },
+  {
+   "time": "1967-09-14T05:04Z",
+   "kind": "arrive",
+   "title": "Arriving Mauritius",
+   "text": "Fine weather - broke stub shaft of coring winch - whole new gear train installed by Ludas in Mauritius."
+  },
+  {
+   "time": "1967-09-21T05:52Z",
+   "kind": "depart",
+   "title": "Departed Mauritius",
+   "text": "Leg 11: Mauritius to Cape Town. Chief scientist T.D. Aitken."
+  },
+  {
+   "time": "1967-10-11T18:26Z",
+   "kind": "arrive",
+   "title": "Arriving Cape Town",
+   "text": "Very poor weather - 2 heavy gales."
+  },
+  {
+   "time": "1967-10-16T11:06Z",
+   "kind": "depart",
+   "title": "Departed Cape Town",
+   "text": "Leg 12: Cape Town to Rio de Janeiro. Chief scientist T.D. Aitken."
+  },
+  {
+   "time": "1967-11-14T04:16Z",
+   "kind": "arrive",
+   "title": "Arriving Rio de Janeiro",
+   "text": "Mod. weather, head sea & swell for first 2 weeks. Last 5 days on reduced speed for sonobuoys."
+  },
+  {
+   "time": "1967-11-17T12:30Z",
+   "kind": "depart",
+   "title": "Departed Rio de Janeiro",
+   "text": "Leg 13: Rio de Janeiro to Miami. Chief scientist R. (Sam) Gerard."
+  },
+  {
+   "time": "1967-11-28T09:43Z",
+   "kind": "note",
+   "title": "Crossed the Equator",
+   "text": "Back into the Northern Hemisphere."
+  },
+  {
+   "time": "1967-12-07T11:30Z",
+   "kind": "place",
+   "title": "Barbados",
+   "text": "Fuel stop at Barbados: fuel consumption was high from adverse weather, currents and very heavy marine growth on the hull.",
+   "lat": 13.1,
+   "lon": -59.62
+  },
+  {
+   "time": "1967-12-15T10:48Z",
+   "kind": "arrive",
+   "title": "Arriving Miami",
+   "text": "Stop at Barbados for fuel - fuel consumption high due adverse weather - currents and very heavy marine growth on bottom."
+  }
+ ],
+ "credit": "Navigation and depth: Marine Geoscience Data System, Lamont-Doherty Earth Observatory, Vema expeditions V2401-V2413 (CC BY-NC-SA 3.0). Chart and log sheet: family collection."
+}

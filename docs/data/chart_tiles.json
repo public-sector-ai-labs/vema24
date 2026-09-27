@@ -1,0 +1,12 @@
+{
+ "width": 8170,
+ "height": 5280,
+ "tile_size": 256,
+ "max_zoom": 5,
+ "lon_min_frame": 32,
+ "lon_max_frame": 486,
+ "lat_min": -77,
+ "lat_max": 84,
+ "background": "#eccf91",
+ "source_image": "99026b - original_web_rect.jpg"
+}

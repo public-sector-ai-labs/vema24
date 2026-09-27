@@ -1,0 +1,833 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0f1823">
+<title>R/V Vema · Voyage 24 · 1967</title>
+<link rel="stylesheet" href="vendor/leaflet/leaflet.css">
+<style>
+:root{
+  --bg:#0f1823; --panel:rgba(15,24,35,.88); --panel-solid:#101b27; --line:rgba(243,234,216,.14);
+  --text:#f3ead8; --muted:#b8ab93; --faint:#8a7f6c; --brass:#e3a93c; --brass-2:#f2c66d;
+  --under:#7fd1c4; --station:#f2c66d; --port:#c9b8ff;
+  --serif:Georgia,"Iowan Old Style","Palatino Linotype",serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --type:"Courier New",Courier,"Nimbus Mono PS",monospace;
+  --r:14px; --gap:12px; --panel-w:340px; --tl-h:150px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font:15px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-text-size-adjust:100%}
+body{display:grid;grid-template-rows:1fr auto;overflow:hidden;height:100dvh}
+button{font:inherit;color:inherit}
+#stage{position:relative;min-height:0}
+#map{position:absolute;inset:0;background:#e8c88e}
+.leaflet-container{font:inherit}
+.leaflet-control-attribution{display:none}
+/* overlap tiles by a pixel and draw them normally (Leaflet's additive blend brightens overlaps into light seams) */
+.leaflet-container img.leaflet-tile{width:257px!important;height:257px!important;mix-blend-mode:normal}
+
+/* ---------- title ---------- */
+#title{position:absolute;left:var(--gap);top:var(--gap);z-index:500;background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--r);padding:8px 14px;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);pointer-events:auto}
+#title h1{margin:0;font:600 17px/1.2 var(--serif);letter-spacing:.02em}
+#title p{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+#aboutBtn{position:absolute;right:10px;top:8px;border:0;background:none;color:var(--muted);cursor:pointer;font-size:13px}
+
+/* ---------- info panel ---------- */
+#panel{position:absolute;right:var(--gap);top:var(--gap);bottom:var(--gap);width:var(--panel-w);z-index:500;
+  background:var(--panel);border:1px solid var(--line);border-radius:var(--r);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  overflow:auto;padding:16px 16px 12px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin}
+.weekday{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.12em}
+.date{font:600 26px/1.1 var(--serif)}
+.clock{color:var(--muted);font-size:13px;margin-top:3px}
+.clock b{color:var(--text);font-weight:500;font-family:var(--mono)}
+.status{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px 3px 8px;font-size:13px;font-weight:600;
+  background:rgba(127,209,196,.14);color:var(--under)}
+.pill::before{content:"";width:8px;height:8px;border-radius:50%;background:currentColor}
+.pill.station{background:rgba(242,198,109,.14);color:var(--station)}
+.pill.port{background:rgba(201,184,255,.14);color:var(--port)}
+.status .sub{color:var(--muted);font-size:13px}
+.card{border-top:1px solid var(--line);padding-top:10px}
+.label{color:var(--faint);font-size:11.5px;text-transform:uppercase;letter-spacing:.1em;margin-bottom:3px}
+.leg{font:600 16px/1.25 var(--serif)}
+.meta{color:var(--muted);font-size:13px}
+.pos{font-family:var(--mono);font-size:14px}
+.depthrow{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.depth{font:600 26px/1 var(--serif)}
+.depth small{font-size:15px;font-weight:400;color:var(--muted)}
+#xsec{width:100%;height:74px;display:block;margin-top:6px;border-radius:8px}
+.legend{display:flex;align-items:center;gap:6px;color:var(--faint);font-size:11px;margin-top:4px}
+.legend i{flex:1;height:6px;border-radius:3px}
+.odo{display:flex;justify-content:space-between;align-items:baseline}
+.odo b{font:600 18px var(--mono)}
+.bar{height:5px;background:rgba(243,234,216,.12);border-radius:3px;margin-top:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--brass);width:0}
+.remark{font:14px/1.45 var(--type);color:#efe3c6;background:rgba(243,234,216,.05);border-left:3px solid var(--brass);padding:8px 10px;border-radius:4px}
+.event{background:rgba(227,169,60,.12);border:1px solid rgba(227,169,60,.35);border-radius:10px;padding:8px 10px}
+.event .t{font-weight:600}
+.event .when{color:var(--muted);font-size:12px}
+.event .x{font-size:13.5px;margin-top:2px}
+.hide{display:none!important}
+
+/* ---------- timeline ---------- */
+#timeline{position:relative;background:var(--panel-solid);border-top:1px solid var(--line);padding:8px 12px 10px;
+  padding-bottom:max(10px,env(safe-area-inset-bottom));user-select:none;-webkit-user-select:none}
+#controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.btn{border:1px solid var(--line);background:rgba(243,234,216,.06);border-radius:10px;height:36px;min-width:36px;padding:0 12px;
+  cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:14px}
+.btn:hover{background:rgba(243,234,216,.12)}
+.btn.on{background:rgba(227,169,60,.22);border-color:rgba(227,169,60,.6);color:var(--brass-2)}
+.btn:focus-visible,.seg button:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
+#play{width:48px;font-size:16px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;height:36px}
+.seg button{border:0;background:rgba(243,234,216,.04);padding:0 11px;cursor:pointer;font-size:13.5px}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on{background:rgba(227,169,60,.22);color:var(--brass-2)}
+#live{display:none;color:#ff8b6b;font-size:12px;font-weight:700;letter-spacing:.08em;align-items:center;gap:6px}
+#live::before{content:"";width:8px;height:8px;border-radius:50%;background:#ff6b4a;animation:pulse 1.6s infinite}
+body.is-live #live{display:inline-flex}
+@keyframes pulse{50%{opacity:.25}}
+.spacer{flex:1}
+#tlDate{font-family:var(--mono);color:var(--muted);font-size:13px}
+#tlwrap{position:relative;height:92px;cursor:pointer;touch-action:none}
+#tl,#tlc{position:absolute;inset:0;width:100%;height:100%}
+#tip{position:absolute;top:-26px;transform:translateX(-50%);background:#000c;color:var(--text);font-size:12px;padding:2px 7px;border-radius:6px;
+  pointer-events:none;white-space:nowrap;display:none}
+
+/* ---------- ship marker ---------- */
+.ship{pointer-events:none}
+.ship .ring{position:absolute;inset:6px;border-radius:50%;border:2px solid var(--brass);opacity:.8;animation:ring 2.4s infinite}
+.ship svg{position:absolute;inset:0;filter:drop-shadow(0 1px 2px #0009);transition:transform .4s}
+.ship.ghost{opacity:.4}.ship.ghost .ring{display:none}
+@keyframes ring{0%{transform:scale(.5);opacity:.9}100%{transform:scale(1.5);opacity:0}}
+.leaflet-tooltip.evtip{background:#101b27;color:var(--text);border:1px solid var(--line);font-size:12.5px}
+.leaflet-tooltip.evtip::before{display:none}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#101b27;color:var(--text)}
+.leaflet-popup-content{margin:10px 14px;font-size:14px}
+.leaflet-bar a{background:#101b27;color:var(--text);border-color:var(--line)}
+.leaflet-bar a:hover{background:#1b2a3a}
+
+/* ---------- dialogs & toasts ---------- */
+#about{max-width:560px;width:calc(100% - 32px);background:#101b27;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:22px 24px}
+#about::backdrop{background:#000a}
+#about h2{font:600 22px var(--serif);margin:0 0 8px}
+#about p,#about li{color:#e2d7c1;font-size:14.5px}
+#about .small{color:var(--muted);font-size:12.5px}
+#about kbd{font-family:var(--mono);background:rgba(243,234,216,.1);border-radius:4px;padding:0 5px}
+#toast{position:absolute;left:50%;top:var(--gap);transform:translate(-50%,-150%);z-index:600;max-width:min(520px,90%);
+  background:#101b27f2;border:1px solid rgba(227,169,60,.5);border-radius:12px;padding:10px 16px;transition:transform .5s;text-align:center}
+#toast.show{transform:translate(-50%,0)}
+#toast b{color:var(--brass-2)}
+#loading{position:fixed;inset:0;display:grid;place-items:center;background:var(--bg);z-index:2000;color:var(--muted);font:18px var(--serif)}
+#hint{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:600;background:#101b27e6;border:1px solid var(--line);
+  border-radius:12px;padding:10px 18px;color:var(--muted);transition:opacity 1s;display:none}
+body.tv #hint{display:block}
+
+/* ---------- compact (phone / portrait) ---------- */
+@media (max-width:860px){
+  #stage{display:flex;flex-direction:column}
+  #map{position:relative;inset:auto;flex:1 1 auto;min-height:0}
+  #panel{position:relative;inset:auto;width:auto;flex:0 0 auto;border-radius:0;border-width:1px 0 0;max-height:40dvh;padding:10px 14px;
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 14px;background:var(--panel-solid);backdrop-filter:none}
+  #panel .full{grid-column:1/-1}
+  .date{font-size:21px}.depth{font-size:21px}
+  #xsec{height:54px}
+  .remark{font-size:13px}
+  #title{padding:6px 10px}#title h1{font-size:15px}
+  .seg button{padding:0 8px}
+  #tlwrap{height:76px}
+}
+@media (max-width:520px){ .hide-sm{display:none!important} }
+
+/* ---------- TV mode ---------- */
+body.tv{font-size:20px;--panel-w:520px;--gap:22px}
+body.tv .date{font-size:40px}
+body.tv .depth{font-size:38px}
+body.tv .weekday,body.tv .clock,body.tv .meta,body.tv .status .sub,body.tv .pill{font-size:18px}
+body.tv .leg{font-size:24px}
+body.tv .pos{font-size:20px}
+body.tv .remark{font-size:19px}
+body.tv .label{font-size:14px}
+body.tv #xsec{height:110px}
+body.tv #title h1{font-size:26px}body.tv #title p{font-size:16px}
+body.tv #controls .btn,body.tv #controls .seg{height:44px}
+body.tv #controls .seg button{font-size:17px}
+body.tv #tlwrap{height:110px}
+body.tv #tlDate{font-size:18px}
+body.tv .leaflet-control-zoom{display:none}
+body.tv #aboutBtn{display:none}
+</style>
+</head>
+<body>
+<div id="loading">Loading the voyage…</div>
+
+<div id="stage">
+  <div id="map" aria-label="Chart of the voyage"></div>
+
+  <div id="title">
+    <h1>R/V <em>Vema</em> · Voyage 24 · 1967</h1>
+    <p>Lamont Geological Observatory · around the world, west-about</p>
+  </div>
+
+  <aside id="panel" aria-live="polite">
+    <div class="full">
+      <div class="weekday" id="weekday">—</div>
+      <div class="date" id="date">—</div>
+      <div class="clock" id="clock">—</div>
+    </div>
+    <div class="status full">
+      <span class="pill" id="pill">—</span><span class="sub" id="motion"></span>
+    </div>
+    <div class="card full">
+      <div class="label">Leg</div>
+      <div class="leg" id="legName">—</div>
+      <div class="meta" id="legMeta"></div>
+    </div>
+    <div class="card">
+      <div class="label">Position</div>
+      <div class="pos" id="pos">—</div>
+      <div class="meta" id="posNote"></div>
+    </div>
+    <div class="card">
+      <div class="label">Depth under the keel</div>
+      <div class="depthrow"><div class="depth" id="depth">—</div><div class="meta" id="depthAlt"></div></div>
+      <canvas id="xsec" aria-hidden="true"></canvas>
+      <div class="legend hide-sm"><span>0</span><i id="legendBar"></i><span>6000+ m</span></div>
+    </div>
+    <div class="card full">
+      <div class="odo"><span class="label" style="margin:0">Distance sailed</span><b id="odo">—</b></div>
+      <div class="bar"><i id="odoBar"></i></div>
+      <div class="meta" id="odoMeta"></div>
+    </div>
+    <div class="full event hide" id="eventCard"><div class="t" id="evTitle"></div><div class="when" id="evWhen"></div><div class="x" id="evText"></div></div>
+    <div class="card full" id="remarkCard">
+      <div class="label">From the 1967 voyage log</div>
+      <div class="remark" id="remark">—</div>
+    </div>
+  </aside>
+
+  <div id="toast" role="status"></div>
+  <div id="hint">◀ ▶ one day &nbsp;·&nbsp; ▲ ▼ speed &nbsp;·&nbsp; OK play / pause &nbsp;·&nbsp; ⏪ ⏩ one week</div>
+</div>
+
+<div id="timeline">
+  <div id="controls">
+    <button class="btn" id="play" aria-label="Play or pause" title="Play / pause (space)">▶</button>
+    <div class="seg" id="speeds" role="group" aria-label="Playback speed">
+      <button data-rate="1" title="Real time">Real time</button>
+      <button data-rate="3600" title="One hour per second">1 hr/s</button>
+      <button data-rate="86400" title="One day per second">1 day/s</button>
+      <button data-rate="604800" title="One week per second">1 wk/s</button>
+    </div>
+    <button class="btn" id="today" title="Jump to today's date in 1967, in real time (T)">Today in 1967</button>
+    <span id="live">LIVE</span>
+    <span class="spacer"></span>
+    <span id="tlDate" class="hide-sm"></span>
+    <button class="btn hide-sm" id="follow" title="Keep the ship in view (F)">Follow ship</button>
+    <button class="btn hide-sm" id="loop" title="Start over at the end (L)">Loop</button>
+    <button class="btn" id="aboutBtn2" title="About this voyage" aria-label="About">ⓘ</button>
+  </div>
+  <div id="tlwrap">
+    <canvas id="tl"></canvas><canvas id="tlc"></canvas><div id="tip"></div>
+  </div>
+</div>
+
+<dialog id="about">
+  <h2>R/V <em>Vema</em>, Voyage 24</h2>
+  <!-- EDIT: write your own dedication here -->
+  <p>For Dad, the computer technician aboard <em>Vema</em> on this voyage, who kept the ship's Digital PDP computer
+     running as it turned passes of the new Transit navigation satellites into positions at sea.</p>
+  <p>In 1967 Lamont Geological Observatory's research schooner <em>Vema</em> sailed west-about around the world:
+     New York, Panama, Hawaii, Midway, Manila, Australia, Mauritius, Cape Town, Rio and home to Miami.
+     This page follows her day by day. It opens on today's date, 1967, and moves in real time.</p>
+  <ul>
+    <li><kbd>Space</kbd> play / pause · <kbd>←</kbd> <kbd>→</kbd> one day (with <kbd>Shift</kbd>: one hour) · <kbd>↑</kbd> <kbd>↓</kbd> speed</li>
+    <li><kbd>T</kbd> today in 1967 · <kbd>F</kbd> follow the ship · <kbd>L</kbd> loop · tap the timeline to jump to any date</li>
+  </ul>
+  <p class="small" id="credit"></p>
+  <p class="small">Track: the ship's archived navigation. Depth: her echo soundings. Chart and log sheet: the original 1967 documents.
+     Map software: Leaflet (BSD-2).</p>
+  <form method="dialog" style="text-align:right;margin-top:14px"><button class="btn">Close</button></form>
+</dialog>
+
+<script src="vendor/leaflet/leaflet.js"></script>
+<script>
+"use strict";
+/* ============================================================================
+   R/V Vema · Voyage 24 · 1967
+   Data (site/data): track.json, depth.json, voyage.json, chart_tiles.json
+   Chart tiles: site/tiles/{z}/{x}/{y}.jpg (tools/make_tiles.py)
+   URL options: ?tv  (TV / ambient mode)   ?date=1967-09-26   ?speed=day|hour|week|real   ?follow=1
+   ========================================================================== */
+const Q = new URLSearchParams(location.search);
+const TV = Q.has("tv") || Q.get("mode") === "tv";
+if (TV) document.body.classList.add("tv");
+const $ = id => document.getElementById(id);
+const DAY = 86400e3, HOUR = 3600e3, MIN = 60e3;
+const RAD = Math.PI / 180, NM_R = 3440.065;
+const FRAME_LO = 60, FRAME_HI = 460;              // the chart spans 60E .. (60E+400) = 100E
+const DEPTH_EDGES = [200, 1000, 2000, 3000, 4000, 5000, 6000];
+const DEPTH_COLORS = ["#39b3a6", "#2e9bb5", "#2a83c0", "#2a6bbd", "#2a53ad", "#2b3f97", "#2a2d7c", "#251d5c"];
+const NO_DEPTH = "#7d7263";
+const YEAR0 = Date.UTC(1967, 0, 1), YEAR1 = Date.UTC(1968, 0, 1);
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("vema24." + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("vema24." + k, JSON.stringify(v)); } catch {} }
+};
+
+/* ---------------------------------------------------------------- helpers */
+const merc = lat => Math.log(Math.tan(Math.PI / 4 + lat * RAD / 2)) / RAD;
+const wrap = lon => ((lon + 540) % 360 + 360) % 360 - 180;
+function hav(lat1, lon1, lat2, lon2) {
+  const p1 = lat1 * RAD, p2 = lat2 * RAD, dl = (lon2 - lon1) * RAD;
+  const h = Math.sin((p2 - p1) / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+  return 2 * NM_R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+function bearing(lat1, lon1, lat2, lon2) {
+  const p1 = lat1 * RAD, p2 = lat2 * RAD, dl = (lon2 - lon1) * RAD;
+  const y = Math.sin(dl) * Math.cos(p2), x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
+  return (Math.atan2(y, x) / RAD + 360) % 360;
+}
+function upper(arr, v) { let lo = 0, hi = arr.length; while (lo < hi) { const m = (lo + hi) >> 1; if (arr[m] <= v) lo = m + 1; else hi = m; } return lo; }
+const fmtInt = n => Math.round(n).toLocaleString("en-US");
+function dm(v, pos, neg) { const a = Math.abs(v), d = Math.floor(a), m = (a - d) * 60; return `${d}°${m.toFixed(1).padStart(4, "0")}′ ${v >= 0 ? pos : neg}`; }
+const compass = b => ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"][Math.round(b / 22.5) % 16];
+const fdate = (t, o) => new Date(t).toLocaleDateString("en-US", Object.assign({ timeZone: "UTC" }, o));
+function fclock(t) { const d = new Date(t); return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`; }
+function f12(t) { const d = new Date(t); let h = d.getUTCHours(); const m = String(d.getUTCMinutes()).padStart(2, "0"); const ap = h < 12 ? "am" : "pm"; h = h % 12 || 12; return `${h}:${m} ${ap}`; }
+const depthColor = d => d == null ? NO_DEPTH : DEPTH_COLORS[upper(DEPTH_EDGES, d)];
+async function getJSON(p) { const r = await fetch(p, { cache: "no-cache" }); if (!r.ok) throw new Error(p + " " + r.status); return r.json(); }
+
+/* ---------------------------------------------------------------- model */
+let V, TR, DP, CT;                 // voyage, track, depth, chart tiles
+let N, TT, LAT, LON, LEGI, CUM;    // track arrays
+let DT = null, DD = null, DGAP = 0;
+let LEGS = [], EVENTS = [], VSTART, VEND;
+
+function buildModel() {
+  const t0 = TR.t0 * 1000;
+  N = TR.t.length;
+  TT = new Float64Array(N); LAT = new Float64Array(TR.lat); LON = new Float64Array(TR.lon);
+  for (let i = 0; i < N; i++) TT[i] = t0 + TR.t[i] * MIN;
+  LEGI = new Int16Array(N).fill(-1);
+  const byId = Object.fromEntries(V.legs.map(l => [l.id, l]));
+  let prevCum = 0;
+  LEGS = TR.legs.map((l, k) => {
+    for (let i = l.i0; i <= l.i1; i++) LEGI[i] = k;
+    const log = byId[l.id] || {};
+    const logMiles = log.cum_miles != null ? log.cum_miles - prevCum : l.nm;
+    const leg = Object.assign({}, log, l, { k, t0: TT[l.i0], t1: TT[l.i1], cum0: prevCum, logMiles });
+    prevCum = log.cum_miles != null ? log.cum_miles : prevCum + l.nm;
+    return leg;
+  });
+  // odometer that ends each leg exactly on the log sheet's cumulative miles
+  CUM = new Float64Array(N);
+  for (const L of LEGS) {
+    let s = 0; const raw = [0];
+    for (let i = L.i0 + 1; i <= L.i1; i++) { s += hav(LAT[i - 1], LON[i - 1], LAT[i], LON[i]); raw.push(s); }
+    for (let i = L.i0; i <= L.i1; i++) CUM[i] = L.cum0 + (s ? raw[i - L.i0] / s : 0) * L.logMiles;
+  }
+  VSTART = LEGS[0].t0; VEND = LEGS[LEGS.length - 1].t1;
+  if (DP) {
+    DT = new Float64Array(DP.t.length); DD = new Float64Array(DP.d);
+    for (let i = 0; i < DT.length; i++) DT[i] = DP.t0 * 1000 + DP.t[i] * MIN;
+    DGAP = (DP.max_interp_min || 180) * MIN;
+  }
+  EVENTS = (V.events || []).map(e => Object.assign({}, e, { tm: Date.parse(e.time) })).sort((a, b) => a.tm - b.tm);
+}
+
+function depthAt(t) {
+  if (!DT) return null;
+  const j = upper(DT, t);
+  if (j === 0 || j >= DT.length) return null;
+  const a = j - 1, span = DT[j] - DT[a];
+  if (span > DGAP) {
+    // no interpolation across a gap, but accept a sounding within 30 minutes
+    if (t - DT[a] < 30 * MIN) return DD[a];
+    if (DT[j] - t < 30 * MIN) return DD[j];
+    return null;
+  }
+  return DD[a] + (DD[j] - DD[a]) * (t - DT[a]) / span;
+}
+
+/* position & status at time t */
+function rawPos(t) {
+  const j = Math.min(Math.max(upper(TT, t), 1), N - 1), a = j - 1;
+  const f = Math.max(0, Math.min(1, (t - TT[a]) / Math.max(1, TT[j] - TT[a])));
+  return { lat: LAT[a] + (LAT[j] - LAT[a]) * f, lon: LON[a] + (LON[j] - LON[a]) * f, fi: a + f, gap: TT[j] - TT[a] > 6 * HOUR };
+}
+function state(t) {
+  const s = { t };
+  if (t < VSTART) { const L = LEGS[0]; Object.assign(s, rawPos(VSTART), { mode: "before", leg: L, port: L.from }); return s; }
+  if (t > VEND) { const L = LEGS[LEGS.length - 1]; Object.assign(s, rawPos(VEND), { mode: "after", leg: L, port: L.to }); return s; }
+  let k = LEGS.findIndex(L => t <= L.t1);
+  const L = LEGS[k];
+  if (t < L.t0) {   // in port between legs
+    const P = LEGS[k - 1];
+    Object.assign(s, rawPos(P.t1), { mode: "port", leg: P, next: L, port: P.to });
+    if (P.to === "Cristobal" && t > Date.parse("1967-02-21T09:00Z") && t < Date.parse("1967-02-21T19:00Z")) s.canal = true;
+    return s;
+  }
+  Object.assign(s, rawPos(t), { mode: "sea", leg: L });
+  const a = rawPos(Math.max(L.t0, t - 30 * MIN)), b = rawPos(Math.min(L.t1, t + 30 * MIN));
+  const hrs = (Math.min(L.t1, t + 30 * MIN) - Math.max(L.t0, t - 30 * MIN)) / HOUR;
+  const dist = hav(a.lat, a.lon, b.lat, b.lon);
+  s.speed = hrs > 0 ? dist / hrs : 0;
+  s.heading = dist > 0.05 ? bearing(a.lat, a.lon, b.lat, b.lon) : null;
+  s.stopped = s.speed < 1.5;
+  return s;
+}
+function odometer(s) {
+  if (s.mode === "before") return 0;
+  if (s.mode === "port" || s.mode === "after") return s.leg.cum0 + s.leg.logMiles;
+  const a = Math.floor(s.fi), f = s.fi - a;
+  return CUM[a] + (CUM[Math.min(a + 1, N - 1)] - CUM[a]) * f;
+}
+
+/* ---------------------------------------------------------------- chart / map */
+let map, NZ, M_MAX, M_MIN, shipMarkers = [], trackRuns = [], lastFi = -1;
+function pxOf(L, lat) {
+  return [(L - CT.lon_min_frame) / (CT.lon_max_frame - CT.lon_min_frame) * CT.width,
+          (M_MAX - merc(lat)) / (M_MAX - M_MIN) * CT.height];
+}
+const ll = (L, lat) => map.unproject(pxOf(L, lat), NZ);
+const copiesOf = L => [-2, -1, 0, 1, 2].map(k => L + 360 * k).filter(x => x >= FRAME_LO && x <= FRAME_HI);
+
+function buildMap() {
+  NZ = CT.max_zoom; M_MAX = merc(CT.lat_max); M_MIN = merc(CT.lat_min);
+  map = L.map("map", { crs: L.CRS.Simple, zoomSnap: .25, zoomDelta: .5, wheelPxPerZoomLevel: 110, keyboard: false,
+                       attributionControl: false, zoomControl: false, preferCanvas: true, bounceAtZoomLimits: false });
+  if (!TV) L.control.zoom({ position: "bottomleft" }).addTo(map);
+  $("map").style.background = CT.background || "#e8c88e";
+  const full = L.latLngBounds(map.unproject([0, CT.height], NZ), map.unproject([CT.width, 0], NZ));
+  L.tileLayer("tiles/{z}/{x}/{y}.jpg", { tileSize: CT.tile_size, noWrap: true, bounds: full, minNativeZoom: 0,
+                                         maxNativeZoom: NZ, maxZoom: NZ + 2, minZoom: -2, keepBuffer: 3 }).addTo(map);
+  map.setMaxBounds(full.pad(0.6));
+  const neat = L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78));
+  map.fitBounds(neat, fitPad());
+  map.setMinZoom(map.getZoom() - 0.75);
+  map.setMaxZoom(NZ + 2);
+
+  const R = L.canvas({ padding: 0.3 });
+  // whole voyage, faint and dashed: where she is going
+  for (const run of buildRuns(false)) L.polyline(run.pts.map(p => p.ll), { renderer: R, color: "#4a3826", weight: 1.6,
+                                                   opacity: .55, dashArray: "4 5", interactive: false }).addTo(map);
+  // sailed part, coloured by depth; runs are revealed as time passes
+  trackRuns = buildRuns(true).map(run => Object.assign(run, {
+    line: L.polyline(run.pts.map(p => p.ll), { renderer: R, color: run.color, weight: TV ? 4.5 : 3.4, opacity: 0,
+                                             lineCap: "round", lineJoin: "round", interactive: false }).addTo(map), vis: 0 }));
+  // events worth a marker
+  for (const e of EVENTS) {
+    if (!["place", "note", "deep", "story"].includes(e.kind)) continue;
+    const p = rawPos(e.tm);
+    for (const Lx of copiesOf(p.lon)) {
+      const m = L.circleMarker(ll(Lx, p.lat), { renderer: R, radius: TV ? 6 : 4.5, color: "#2b1d12", weight: 1.2,
+                                               fillColor: "#e3a93c", fillOpacity: .95 }).addTo(map);
+      m.bindTooltip(e.title, { className: "evtip", direction: "top", offset: [0, -6] });
+      m.bindPopup(`<b>${e.title}</b><br><span style="color:#b8ab93">${fdate(e.tm, { month: "long", day: "numeric" })}</span><br>${e.text || ""}`);
+      m.on("click", () => seek(e.tm));
+    }
+  }
+  // the ship (one marker per visible copy of her position on the chart)
+  for (let i = 0; i < 2; i++) {
+    const icon = L.divIcon({ className: "ship", iconSize: [44, 44], html:
+      `<div class="ring"></div><svg viewBox="-22 -22 44 44"><g class="hull">
+        <path d="M0-15 C5-9 6-2 6 6 L5 13 L-5 13 L-6 6 C-6-2 -5-9 0-15Z" fill="#e3a93c" stroke="#2b1d12" stroke-width="1.6"/>
+        <circle r="1.6" cy="-6" fill="#2b1d12"/><circle r="1.6" cy="0" fill="#2b1d12"/><circle r="1.6" cy="6" fill="#2b1d12"/></g></svg>` });
+    shipMarkers.push(L.marker([0, 0], { icon, interactive: false, keyboard: false, zIndexOffset: 1000 }));
+  }
+  map.on("dragstart", () => { if (ui.follow && !TV) setFollow(false, true); });
+  window.addEventListener("resize", () => { drawTimelineBase(); });
+}
+function panelOffset() {  // px the visible map centre sits left of the container centre
+  return innerWidth > 860 ? (parseFloat(getComputedStyle(document.body).getPropertyValue("--panel-w")) + 24) / 2 : 0;
+}
+function viewCenterFor(p, zoom) {
+  const z = zoom == null ? map.getZoom() : zoom;
+  return map.unproject(map.project(p, z).add([panelOffset(), 0]), z);
+}
+function fitPad() {
+  const wide = innerWidth > 860;
+  return { paddingTopLeft: [10, wide ? 60 : 50], paddingBottomRight: [wide ? parseFloat(getComputedStyle(document.body).getPropertyValue("--panel-w")) + 30 : 10, 10] };
+}
+
+/* Split the track into drawable runs: one per chart copy, clipped to the chart
+   frame, never joined across port stays, and (for the sailed layer) split where
+   the depth colour changes. Each point keeps its fractional track index. */
+function buildRuns(byDepth) {
+  const bin = new Array(N).fill("#000");
+  if (byDepth) for (let i = 0; i < N - 1; i++) bin[i] = depthColor(depthAt((TT[i] + TT[i + 1]) / 2));
+  const runs = [];
+  for (let k = -1; k <= 3; k++) {
+    let cur = null;
+    for (let i = 0; i < N - 1; i++) {
+      if (LEGI[i] !== LEGI[i + 1] || LEGI[i] < 0) { cur = null; continue; }
+      const L1 = LON[i] + 360 * k, L2 = LON[i + 1] + 360 * k;
+      let a = 0, b = 1;
+      if (L1 === L2) { if (L1 < FRAME_LO || L1 > FRAME_HI) { cur = null; continue; } }
+      else {
+        const ta = (FRAME_LO - L1) / (L2 - L1), tb = (FRAME_HI - L1) / (L2 - L1);
+        a = Math.max(0, Math.min(ta, tb)); b = Math.min(1, Math.max(ta, tb));
+        if (a >= b) { cur = null; continue; }
+      }
+      const P = f => { const Lx = L1 + (L2 - L1) * f, la = LAT[i] + (LAT[i + 1] - LAT[i]) * f; return { fi: i + f, L: Lx, lat: la, ll: ll(Lx, la) }; };
+      const color = bin[i];
+      if (!cur || cur.color !== color || a > 0 || Math.abs(cur.i1 - (i + a)) > 1e-9) {
+        cur = { k, color, pts: [P(a)], i0: i + a }; runs.push(cur);
+      }
+      cur.pts.push(P(b)); cur.i1 = i + b;
+      if (b < 1) cur = null;
+    }
+  }
+  return runs;
+}
+
+function updateTrack(fi) {
+  if (fi === lastFi) return;
+  lastFi = fi;
+  for (const r of trackRuns) {
+    const want = fi >= r.i1 ? 2 : fi <= r.i0 ? 0 : 1;
+    if (want === 1) {
+      const pts = [];
+      for (const p of r.pts) { if (p.fi <= fi) pts.push(p.ll); else break; }
+      const j = pts.length;
+      if (j > 0 && j < r.pts.length) {
+        const A = r.pts[j - 1], B = r.pts[j], f = (fi - A.fi) / Math.max(1e-9, B.fi - A.fi);
+        pts.push(ll(A.L + (B.L - A.L) * f, A.lat + (B.lat - A.lat) * f));
+      }
+      r.line.setLatLngs(pts); r.partial = true;
+      if (r.vis !== 1) { r.line.setStyle({ opacity: .95 }); r.vis = 1; }
+    } else if (want !== r.vis || r.partial) {
+      if (r.partial) { r.line.setLatLngs(r.pts.map(p => p.ll)); r.partial = false; }
+      r.line.setStyle({ opacity: want === 2 ? .95 : 0 }); r.vis = want;
+    }
+  }
+}
+
+let followCopy = null, flying = false;
+function updateShip(s) {
+  const Ls = copiesOf(s.lon);
+  // prefer the copy we are already following, else the one nearest the middle of the view
+  const cx = map.getCenter();
+  Ls.sort((a, b) => Math.abs(ll(a, s.lat).lng - cx.lng) - Math.abs(ll(b, s.lat).lng - cx.lng));
+  if (followCopy != null) {
+    const keep = Ls.find(L => Math.abs(L - followCopy) < 20);
+    if (keep != null) Ls.splice(Ls.indexOf(keep), 1), Ls.unshift(keep);
+  }
+  shipMarkers.forEach((m, i) => {
+    const L = Ls[i];
+    if (L == null) { if (map.hasLayer(m)) m.remove(); return; }
+    m.setLatLng(ll(L, s.lat));
+    if (!map.hasLayer(m)) m.addTo(map);
+    const el = m.getElement();
+    if (el) {
+      el.classList.toggle("ghost", i > 0);
+      const g = el.querySelector("svg");
+      if (s.heading != null) g.style.transform = `rotate(${s.heading}deg)`;
+      el.querySelector(".ring").style.display = s.mode === "sea" && i === 0 ? "" : "none";
+    }
+  });
+  followCopy = Ls[0];
+  if (ui.follow && Ls.length && !flying) {
+    const target = viewCenterFor(ll(Ls[0], s.lat)), c = map.getCenter();
+    const d = map.latLngToContainerPoint(target).distanceTo(map.latLngToContainerPoint(c));
+    if (d > innerWidth * .6) { flying = true; map.flyTo(target, map.getZoom(), { duration: 1.2 }); map.once("moveend", () => flying = false); }
+    else if (d > 1.5) map.panTo(target, { animate: false });
+  }
+}
+
+/* ---------------------------------------------------------------- panel */
+const ui = { t: 0, playing: false, rate: 86400, live: false, follow: TV, loop: TV, lastPanel: 0, lastEvent: null };
+function updatePanel(s) {
+  const t = s.t;
+  $("weekday").textContent = fdate(t, { weekday: "long" });
+  $("date").textContent = fdate(t, { day: "numeric", month: "long", year: "numeric" });
+  const zone = Math.round(wrap(s.lon) / 15);
+  $("clock").innerHTML = `<b>${fclock(t)}</b> GMT &nbsp;·&nbsp; ship's clock ≈ <b>${f12(t + zone * HOUR)}</b>`;
+
+  const pill = $("pill"), L = s.leg, nLegs = LEGS.length;
+  pill.className = "pill";
+  let motion = "";
+  if (s.mode === "sea") {
+    if (s.stopped) { pill.textContent = "On station"; pill.classList.add("station"); motion = "stopped for science"; }
+    else { pill.textContent = "Under way"; motion = `${s.speed.toFixed(1)} knots · heading ${Math.round(s.heading)}° ${compass(s.heading)}`; }
+  } else {
+    pill.classList.add("port");
+    if (s.mode === "before") { pill.textContent = `In port · ${s.port}`; motion = `sails ${fdate(VSTART, { month: "long", day: "numeric" })}`; }
+    else if (s.mode === "after") { pill.textContent = `Voyage complete · ${s.port}`; motion = `arrived ${fdate(VEND, { month: "long", day: "numeric" })}`; }
+    else if (s.canal) { pill.textContent = "Panama Canal transit"; motion = "Cristobal to Balboa, about 10 hours"; }
+    else { pill.textContent = `In port · ${s.port}`; motion = `sails for ${s.next.to} ${fdate(s.next.t0, { month: "long", day: "numeric" })}`; }
+  }
+  $("motion").textContent = motion;
+
+  if (s.mode === "port") {
+    $("legName").textContent = `Between legs ${L.number || L.k + 1} and ${(L.number || L.k + 1) + 1}`;
+    $("legMeta").textContent = `Next: ${s.next.from} → ${s.next.to}, chief scientist ${s.next.chief_scientist || "—"}`;
+  } else {
+    $("legName").textContent = `Leg ${L.k + 1} of ${nLegs} · ${L.from} → ${L.to}`;
+    const day = Math.floor((Math.min(Math.max(t, L.t0), L.t1) - L.t0) / DAY) + 1, days = Math.ceil((L.t1 - L.t0) / DAY);
+    $("legMeta").textContent = `Chief scientist ${L.chief_scientist || "—"}` + (s.mode === "sea" ? ` · day ${day} of ${days}` : "");
+  }
+  $("pos").textContent = `${dm(s.lat, "N", "S")}   ${dm(wrap(s.lon), "E", "W")}`;
+  $("posNote").textContent = s.mode === "sea" && s.gap ? "between fixes: position estimated" : "";
+
+  const d = s.mode === "sea" ? depthAt(t) : null;
+  if (d != null) {
+    $("depth").innerHTML = `${fmtInt(d)} <small>m</small>`;
+    $("depthAlt").textContent = `${fmtInt(d / 1.8288)} fathoms · ${fmtInt(d * 3.28084)} ft`;
+  } else {
+    $("depth").innerHTML = `<small>${s.mode === "sea" ? "no sounding" : "alongside"}</small>`;
+    $("depthAlt").textContent = "";
+  }
+  drawXsec(s);
+
+  const odo = odometer(s), tot = V.totals && V.totals.miles || LEGS[nLegs - 1].cum0 + LEGS[nLegs - 1].logMiles;
+  $("odo").textContent = `${fmtInt(odo)} nm`;
+  $("odoBar").style.width = `${Math.min(100, odo / tot * 100)}%`;
+  const vday = Math.floor((t - VSTART) / DAY) + 1;
+  $("odoMeta").textContent = `of ${fmtInt(tot)} in the 1967 log` + (t >= VSTART && t <= VEND ? ` · day ${vday} of the voyage` : "");
+
+  $("remark").textContent = L.remarks || "—";
+
+  // most recent notable event within the last 2 days
+  let ev = null;
+  for (const e of EVENTS) { if (e.tm <= t && t - e.tm < 2 * DAY && e.kind !== "depart" && e.kind !== "arrive") ev = e; if (e.tm > t) break; }
+  $("eventCard").classList.toggle("hide", !ev);
+  if (ev) {
+    $("evTitle").textContent = ev.title;
+    $("evWhen").textContent = fdate(ev.tm, { weekday: "long", month: "long", day: "numeric" }) + " · " + fclock(ev.tm) + " GMT";
+    $("evText").textContent = ev.text || "";
+  }
+}
+
+/* seafloor cross-section: 36 hours either side of now */
+function drawXsec(s) {
+  const c = $("xsec"), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if (!w) return;
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sky = 14, span = 36 * HOUR, n = 90;
+  const ds = []; let mx = 1000;
+  for (let i = 0; i <= n; i++) { const tt = s.t - span + 2 * span * i / n; const d = s.mode === "sea" && tt >= s.leg.t0 && tt <= s.leg.t1 ? depthAt(tt) : null; ds.push(d); if (d != null) mx = Math.max(mx, d); }
+  mx = Math.ceil(mx / 1000) * 1000;
+  const grd = g.createLinearGradient(0, sky, 0, h); grd.addColorStop(0, "#2a6f9a"); grd.addColorStop(1, "#0b1f3a");
+  g.clearRect(0, 0, w, h); g.fillStyle = "#16283a"; g.fillRect(0, 0, w, sky); g.fillStyle = grd; g.fillRect(0, sky, w, h - sky);
+  g.beginPath(); let started = false;
+  const Y = d => sky + (h - sky - 2) * d / mx;
+  for (let i = 0; i <= n; i++) {
+    const x = w * i / n, d = ds[i];
+    if (d == null) { if (started) { g.lineTo(w * (i - 1) / n, h); g.closePath(); g.fillStyle = "#8b6a44"; g.fill(); g.beginPath(); started = false; } continue; }
+    if (!started) { g.moveTo(x, h); g.lineTo(x, Y(d)); started = true; } else g.lineTo(x, Y(d));
+  }
+  if (started) { g.lineTo(w, h); g.closePath(); g.fillStyle = "#8b6a44"; g.fill(); }
+  if (s.mode !== "sea") { g.fillStyle = "rgba(243,234,216,.6)"; g.font = "13px system-ui"; g.textAlign = "center";
+    g.fillText(s.mode === "port" ? "in port" : s.mode === "before" ? "waiting to sail" : "voyage complete", w / 2, (h + sky) / 2 + 4); g.textAlign = "left"; }
+  else { g.fillStyle = "rgba(243,234,216,.55)"; g.font = "10px system-ui"; g.fillText(`${fmtInt(mx)} m`, 4, h - 4); }
+  g.fillStyle = "rgba(243,234,216,.4)"; g.fillText("−36 h", 4, sky - 3); g.textAlign = "right"; g.fillText("+36 h", w - 4, sky - 3); g.textAlign = "left";
+  // ship at the surface, sounding line straight down
+  const cx = w / 2, dNow = ds[n / 2];
+  if (dNow != null) { g.strokeStyle = "rgba(242,198,109,.7)"; g.setLineDash([3, 3]); g.beginPath(); g.moveTo(cx, sky); g.lineTo(cx, Y(dNow)); g.stroke(); g.setLineDash([]); }
+  g.fillStyle = "#e3a93c"; g.beginPath(); g.moveTo(cx - 9, sky - 5); g.lineTo(cx + 9, sky - 5); g.lineTo(cx + 6, sky); g.lineTo(cx - 6, sky); g.closePath(); g.fill();
+  g.fillRect(cx - 1, sky - 13, 2, 8);
+}
+
+/* ---------------------------------------------------------------- timeline */
+let tlBase = null;
+const tlX = (t, w) => (t - YEAR0) / (YEAR1 - YEAR0) * w;
+function drawTimelineBase() {
+  const c = $("tl"), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const axis = 16, band = 12, top = 2, prof = h - axis - band - top - 4;
+  g.clearRect(0, 0, w, h);
+  g.fillStyle = "#0c1a2a"; g.fillRect(0, top, w, prof);
+  // depth profile (sea from the top, seafloor filled below)
+  if (DT) {
+    const Y = d => top + prof * Math.min(d, 9000) / 9000;
+    g.fillStyle = "#6f5436"; g.beginPath(); let open = false, lastX = 0;
+    for (let px = 0; px <= w; px++) {
+      const t = YEAR0 + (YEAR1 - YEAR0) * px / w;
+      const st = t >= VSTART && t <= VEND ? state(t) : null;
+      const d = st && st.mode === "sea" ? depthAt(t) : null;
+      if (d == null) { if (open) { g.lineTo(lastX, top + prof); g.closePath(); g.fill(); g.beginPath(); open = false; } continue; }
+      if (!open) { g.moveTo(px, top + prof); open = true; }
+      g.lineTo(px, Y(d)); lastX = px;
+    }
+    if (open) { g.lineTo(lastX, top + prof); g.closePath(); g.fill(); }
+    g.fillStyle = "rgba(243,234,216,.35)"; g.font = "10px system-ui"; g.fillText("depth", 4, top + 11);
+  }
+  // legs: coloured bands, port stays left dark
+  const by = top + prof + 2;
+  const tones = ["#3f6f8f", "#5b8a6a", "#8a6a4a", "#6a5b8a", "#8a4a5b", "#4a7a8a"];
+  const chiefIdx = {}; let ci = 0;
+  LEGS.forEach(L => {
+    const key = L.chief_scientist || L.id; if (!(key in chiefIdx)) chiefIdx[key] = ci++;
+    const x0 = tlX(L.t0, w), x1 = tlX(L.t1, w);
+    g.fillStyle = tones[chiefIdx[key] % tones.length]; g.fillRect(x0, by, Math.max(1, x1 - x0), band);
+    if (x1 - x0 > 34 && !TV || x1 - x0 > 60) { g.fillStyle = "rgba(255,255,255,.85)"; g.font = `${TV ? 12 : 9.5}px system-ui`; g.fillText(`${L.k + 1}`, x0 + 3, by + band - 3); }
+  });
+  // events
+  g.fillStyle = "#e3a93c";
+  for (const e of EVENTS) if (!["depart", "arrive"].includes(e.kind)) { const x = tlX(e.tm, w); g.beginPath(); g.moveTo(x, by - 1); g.lineTo(x - 3.5, by - 7); g.lineTo(x + 3.5, by - 7); g.closePath(); g.fill(); }
+  // months
+  g.fillStyle = "rgba(243,234,216,.6)"; g.font = `${TV ? 14 : 11}px system-ui`; g.strokeStyle = "rgba(243,234,216,.18)";
+  for (let m = 0; m < 12; m++) {
+    const x = tlX(Date.UTC(1967, m, 1), w);
+    g.beginPath(); g.moveTo(x + .5, top); g.lineTo(x + .5, h - axis + 3); g.stroke();
+    if (w > 420 || m % 2 === 0) g.fillText(new Date(Date.UTC(1967, m, 1)).toLocaleString("en-US", { month: "short", timeZone: "UTC" }), x + 4, h - 3);
+  }
+  tlBase = { w, h, top, prof, by, band };
+  drawCursor();
+}
+function drawCursor() {
+  if (!tlBase) return;
+  const c = $("tlc"), dpr = devicePixelRatio || 1, { w, h } = tlBase;
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const g = c.getContext("2d"); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  const x = tlX(ui.t, w);
+  g.fillStyle = "rgba(15,24,35,.45)"; g.fillRect(x, 0, w - x, h - 16);   // the future is dimmed
+  g.strokeStyle = "#f2c66d"; g.lineWidth = 2; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h - 14); g.stroke();
+  g.fillStyle = "#f2c66d"; g.beginPath(); g.arc(x, h - 14, 5, 0, 7); g.fill();
+}
+function bindTimeline() {
+  const wrapEl = $("tlwrap"), tip = $("tip");
+  const tAt = ev => { const r = wrapEl.getBoundingClientRect(); return YEAR0 + (YEAR1 - YEAR0) * Math.min(1, Math.max(0, (ev.clientX - r.left) / r.width)); };
+  let drag = false;
+  wrapEl.addEventListener("pointerdown", ev => { drag = true; wrapEl.setPointerCapture(ev.pointerId); seek(tAt(ev)); });
+  wrapEl.addEventListener("pointermove", ev => {
+    const t = tAt(ev), r = wrapEl.getBoundingClientRect();
+    if (drag) seek(t);
+    if (ev.pointerType === "mouse" || drag) { tip.style.display = "block"; tip.style.left = `${ev.clientX - r.left}px`; tip.textContent = fdate(t, { month: "short", day: "numeric" }); }
+  });
+  const end = () => { drag = false; tip.style.display = "none"; };
+  wrapEl.addEventListener("pointerup", end); wrapEl.addEventListener("pointercancel", end); wrapEl.addEventListener("pointerleave", () => { if (!drag) tip.style.display = "none"; });
+}
+
+/* ---------------------------------------------------------------- controls */
+const RATES = [1, 3600, 86400, 604800];
+function todayIn1967() { const n = new Date(); return Date.UTC(1967, n.getUTCMonth(), n.getUTCDate(), n.getUTCHours(), n.getUTCMinutes(), n.getUTCSeconds()); }
+function setLive(on) { ui.live = on; document.body.classList.toggle("is-live", on); $("today").classList.toggle("on", on); }
+function setRate(r, quiet) {
+  ui.rate = r; document.querySelectorAll("#speeds button").forEach(b => b.classList.toggle("on", +b.dataset.rate === r));
+  if (r !== 1) setLive(false);
+  store.set("rate", r);
+  if (!quiet) toast(`Speed: <b>${{ 1: "real time", 3600: "1 hour per second", 86400: "1 day per second", 604800: "1 week per second" }[r]}</b>`, 1400);
+}
+function setPlaying(p) { ui.playing = p; $("play").textContent = p ? "❚❚" : "▶"; if (!p) setLive(false); keepAwake(p && (TV || ui.live)); }
+function setFollow(on, quiet) {
+  ui.follow = on; $("follow").classList.toggle("on", on); store.set("follow", on);
+  if (on) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0];
+    if (Lx != null) { const z = Math.max(map.getZoom(), fitZoom() + 1); flying = true; map.flyTo(viewCenterFor(ll(Lx, s.lat), z), z, { duration: 1 }); map.once("moveend", () => flying = false); } }
+  else if (!quiet) map.flyToBounds(L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78)), Object.assign({ duration: 1 }, fitPad()));
+}
+function setLoop(on) { ui.loop = on; $("loop").classList.toggle("on", on); store.set("loop", on); }
+function fitZoom() { const p = fitPad(); return map.getBoundsZoom(L.latLngBounds(ll(FRAME_LO, -69), ll(FRAME_HI, 78)), false, L.point(p.paddingTopLeft).add(p.paddingBottomRight)); }
+function goToday() { setLive(true); setRate(1, true); seek(todayIn1967(), true); setPlaying(true); setLive(true); toast("Synced to <b>today's date in 1967</b>, moving in real time", 2600); }
+function seek(t, keepLive) { ui.t = Math.min(Math.max(t, YEAR0), YEAR1 - 1); ui.prevT = null; if (!keepLive) setLive(false); render(true); }
+function step(ms) { seek(ui.t + ms); }
+function bindControls() {
+  $("play").onclick = () => setPlaying(!ui.playing);
+  document.querySelectorAll("#speeds button").forEach(b => b.onclick = () => { setRate(+b.dataset.rate); if (!ui.playing) setPlaying(true); });
+  $("today").onclick = goToday;
+  $("follow").onclick = () => setFollow(!ui.follow);
+  $("loop").onclick = () => setLoop(!ui.loop);
+  $("aboutBtn2").onclick = () => $("about").showModal();
+  document.addEventListener("keydown", ev => {
+    if ($("about").open) return;
+    const k = ev.key, sh = ev.shiftKey;
+    const map_ = { " ": () => setPlaying(!ui.playing), Enter: () => setPlaying(!ui.playing), MediaPlayPause: () => setPlaying(!ui.playing),
+      ArrowRight: () => step(sh ? HOUR : DAY), ArrowLeft: () => step(sh ? -HOUR : -DAY),
+      MediaFastForward: () => step(7 * DAY), MediaRewind: () => step(-7 * DAY), MediaTrackNext: () => step(7 * DAY), MediaTrackPrevious: () => step(-7 * DAY),
+      ArrowUp: () => { setRate(RATES[Math.min(RATES.length - 1, RATES.indexOf(ui.rate) + 1)]); if (!ui.playing) setPlaying(true); },
+      ArrowDown: () => { setRate(RATES[Math.max(0, RATES.indexOf(ui.rate) - 1)]); },
+      t: goToday, T: goToday, f: () => setFollow(!ui.follow), F: () => setFollow(!ui.follow), l: () => setLoop(!ui.loop), L: () => setLoop(!ui.loop),
+      Home: () => seek(VSTART - 6 * HOUR), End: () => seek(VEND) };
+    const fn = map_[k];
+    if (fn) { ev.preventDefault(); fn(); hintSeen(); }
+  });
+  $("credit").textContent = V.credit || "";
+}
+let toastTimer; function toast(html, ms) { const t = $("toast"); t.innerHTML = html; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), ms || 2500); }
+function hintSeen() { const h = $("hint"); if (h) h.style.opacity = 0; }
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && !wakeLock && navigator.wakeLock) { wakeLock = await navigator.wakeLock.request("screen"); wakeLock.addEventListener("release", () => wakeLock = null); }
+    if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch {}
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && ui.playing && (TV || ui.live)) keepAwake(true); });
+
+/* ---------------------------------------------------------------- main loop */
+let lastReal = performance.now();
+function render(force) {
+  const s = state(ui.t);
+  updateTrack(s.mode === "before" ? 0 : s.mode === "after" ? N : s.mode === "port" ? s.leg.i1 : s.fi);
+  updateShip(s);
+  const now = performance.now();
+  if (force || now - ui.lastPanel > 120) { updatePanel(s); ui.lastPanel = now; }
+  drawCursor();
+  $("tlDate").textContent = fdate(ui.t, { month: "short", day: "numeric", year: "numeric" }) + " · " + fclock(ui.t) + " GMT";
+  // announce events as they happen during playback
+  if (ui.playing && ui.prevT != null && ui.t > ui.prevT && ui.t - ui.prevT < 30 * DAY) {
+    let hit = null;
+    for (const e of EVENTS) if (e.tm > ui.prevT && e.tm <= ui.t && e.kind !== "depart" && e.kind !== "arrive") hit = e;
+    if (hit) toast(`<b>${hit.title}</b><br>${hit.text || ""}`, ui.rate > 100000 ? 3000 : 6000);
+  }
+  ui.prevT = ui.t;
+}
+function frame(now) {
+  const dt = Math.min(0.25, (now - lastReal) / 1000); lastReal = now;
+  if (ui.playing) {
+    if (ui.live) ui.t = todayIn1967();
+    else {
+      ui.t += dt * ui.rate * 1000;
+      if (ui.t > VEND + 12 * HOUR) {
+        if (ui.loop) ui.t = VSTART - 6 * HOUR;
+        else { ui.t = VEND + 12 * HOUR; setPlaying(false); }
+      }
+    }
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+
+/* TV: nudge the whole screen a few pixels every minute so nothing burns in */
+if (TV) setInterval(() => { const a = Date.now() / 60000; document.body.style.transform = `translate(${Math.round(Math.sin(a) * 4)}px, ${Math.round(Math.cos(a * .7) * 3)}px)`; }, 60000);
+
+async function main() {
+  try {
+    [V, TR, CT] = await Promise.all([getJSON("data/voyage.json"), getJSON("data/track.json"), getJSON("data/chart_tiles.json")]);
+    try { DP = await getJSON("data/depth.json"); } catch { DP = null; }
+  } catch (e) {
+    $("loading").innerHTML = `Could not load the voyage data.<br><small style="font-size:14px">${location.protocol === "file:" ?
+      "Open this page through a web server (see README), not by double-clicking the file." : e.message}</small>`;
+    return;
+  }
+  buildModel();
+  buildMap();
+  $("legendBar").style.background = `linear-gradient(90deg, ${DEPTH_COLORS.join(",")})`;
+  drawTimelineBase(); bindTimeline(); bindControls();
+
+  const want = Q.get("date");
+  const sp = { real: 1, hour: 3600, day: 86400, week: 604800 }[Q.get("speed")];
+  setLoop(store.get("loop", TV));
+  if (Q.has("follow")) setFollow(Q.get("follow") !== "0", true); else setFollow(store.get("follow", TV), true);
+  $("loading").remove();
+  if (want) { setRate(sp || store.get("rate", 86400), true); seek(Date.parse(want + (want.length <= 10 ? "T12:00Z" : ""))); setPlaying(false); }
+  else if (sp && sp !== 1) { setRate(sp, true); seek(todayIn1967()); setPlaying(true); }
+  else goToday();
+  if (ui.follow) { const s = state(ui.t); const Lx = copiesOf(s.lon)[0]; const z = fitZoom() + (TV ? 1 : 1.25);
+    if (Lx != null) map.setView(viewCenterFor(ll(Lx, s.lat), z), z, { animate: false }); }
+  followCopy = null; render(true);
+  if (TV) setTimeout(hintSeen, 12000);
+  requestAnimationFrame(frame);
+}
+main();
+</script>
+</body>
+</html>
